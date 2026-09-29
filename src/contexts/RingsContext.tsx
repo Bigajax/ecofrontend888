@@ -75,7 +75,8 @@ function loadRituals(userId?: string | null): DailyRitual[] {
     const key = keyForRituals(userId);
     const stored = localStorage.getItem(key);
     if (stored) {
-      return JSON.parse(stored);
+      const lista = JSON.parse(stored);
+      return Array.isArray(lista) ? lista.map(comRespostas) : [];
     }
   } catch (error) {
     console.error('[RingsContext] Error loading rituals:', error);
@@ -95,10 +96,18 @@ function saveRituals(rituals: DailyRitual[], userId?: string | null): void {
   }
 }
 
+/**
+ * Todo ritual com lista de respostas. O histórico do backend antigo vinha em
+ * snake_case, sem "answers"; guardado no aparelho, quebrava o progresso.
+ */
+function comRespostas(r: DailyRitual): DailyRitual {
+  return Array.isArray(r?.answers) ? r : { ...r, answers: [] };
+}
+
 /** Une rituais do backend e do aparelho por data; um concluído vence um em andamento. */
 function juntarRituais(doBackend: DailyRitual[], doAparelho: DailyRitual[]): DailyRitual[] {
   const porData = new Map<string, DailyRitual>();
-  for (const r of [...doBackend, ...doAparelho]) {
+  for (const r of [...doBackend, ...doAparelho].map(comRespostas)) {
     const atual = porData.get(r.date);
     if (!atual || (atual.status !== 'completed' && r.status === 'completed')) porData.set(r.date, r);
   }
