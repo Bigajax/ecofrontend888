@@ -1864,3 +1864,229 @@
   margin: 4px 0 8px;
   width: 100%;
 }
+
+/* ===================== Diário Estoico: o índice do livro ===================== */
+.reino-diario {
+  background: transparent;
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 36px 16px 8px;
+}
+@media (min-width: 768px) {
+  .reino-diario {
+    padding: 48px 32px 8px;
+  }
+}
+.reino-diario__parte {
+  border-bottom: 1px solid var(--r-trilho);
+}
+.reino-diario__parte:first-of-type {
+  margin-top: 14px;
+  border-top: 1px solid var(--r-trilho);
+}
+.reino-diario__cabeca {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 22px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-diario__numeral {
+  font: 400 52px/1 var(--r-display);
+  color: var(--r-rosa);
+  text-align: center;
+}
+.reino-diario__cabeca[aria-expanded='true'] .reino-diario__numeral {
+  color: var(--r-fg);
+}
+.reino-diario__titulos {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.reino-diario__titulo {
+  font: 400 clamp(21px, 3vw, 26px) / 1.15 var(--r-display);
+  text-wrap: balance;
+}
+.reino-diario__conta {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  font: 400 11.5px var(--r-mono);
+  color: var(--r-fg2);
+  white-space: nowrap;
+}
+.reino-diario__abrir {
+  font: 500 13px var(--r-ui);
+  color: var(--r-fg);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 4px;
+}
+.reino-diario__meses {
+  margin: 0 0 18px 88px;
+}
+@media (max-width: 560px) {
+  .reino-diario__cabeca {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+  .reino-diario__numeral {
+    font-size: 38px;
+  }
+  .reino-diario__conta {
+    grid-column: 2;
+    justify-items: start;
+  }
+  .reino-diario__meses {
+    margin-left: 0;
+  }
+}
+.reino-diario__meses .reino-sumario__n {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.reino-diario__meses .reino-sessao {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+}
+.reino-diario__meses li.is-aberto .reino-sumario__t {
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+.reino-diario__hoje {
+  color: var(--r-fg);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
+/* Diário: as páginas do mês (logado). Uma entrada de diário, não um card. */
+.reino-diario-mes {
+  padding-top: 20px;
+  padding-bottom: 72px;
+}
+.reino-diario-mes__cabeca {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--r-fg);
+}
+.reino-diario-mes__tema {
+  font: 400 clamp(26px, 4.4vw, 34px) / 1.1 var(--r-display);
+  color: var(--r-fg);
+  text-wrap: balance;
+}
+.reino-diario-mes__sobre {
+  font: 400 15px/1.55 var(--r-ui);
+  color: var(--r-fg2);
+  max-width: 34rem;
+}
+.reino-diario-mes__vazio {
+  padding: 28px 0;
+  font: 400 15px/1.6 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-diario-mes__paginas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.reino-diario-pagina {
+  border-bottom: 1px solid var(--r-trilho);
+}
+.reino-diario-pagina__cabeca {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  row-gap: 6px;
+  padding: 22px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-diario-pagina__data {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  font: 400 12px var(--r-mono);
+  letter-spacing: 0.04em;
+  color: var(--r-fg2);
+}
+.reino-diario-pagina__marca {
+  color: var(--r-musgo);
+}
+.reino-diario-pagina__marca::before {
+  content: '·';
+  margin-right: 10px;
+  color: var(--r-fg2);
+}
+.reino-diario-pagina__marca.is-hoje {
+  color: var(--r-fg);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.reino-diario-pagina__titulo {
+  font: 400 clamp(21px, 3.4vw, 26px) / 1.2 var(--r-display);
+  color: var(--r-fg);
+  text-wrap: balance;
+}
+.reino-diario-pagina__autor {
+  grid-column: 1;
+  font: 400 12.5px/1.45 var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-diario-pagina__cabeca .reino-diario__abrir {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  align-self: center;
+}
+.reino-diario-pagina.is-aberta .reino-diario-pagina__cabeca {
+  padding-bottom: 12px;
+}
+.reino-diario-pagina__corpo {
+  display: grid;
+  gap: 26px;
+  padding: 6px 0 32px;
+}
+.reino-diario-pagina__citacao {
+  margin: 0;
+  padding: 4px 0 4px 20px;
+  border-left: 3px solid var(--r-rosa);
+  font: 400 clamp(18px, 2.6vw, 21px) / 1.6 var(--r-display);
+  color: var(--r-fg);
+  max-width: 36rem;
+}
+.reino-diario-pagina__comentario {
+  display: grid;
+  gap: 14px;
+  max-width: 36rem;
+}
+.reino-diario-pagina__comentario > p:not(.reino-rotulo) {
+  font: 400 16px/1.8 var(--r-ui);
+  color: var(--r-fg);
+}
+.reino-diario-pagina__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+}
+.reino-diario-pagina__lida {
+  font: 400 12px var(--r-mono);
+  color: var(--r-musgo);
+}

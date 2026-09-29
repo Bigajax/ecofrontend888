@@ -874,6 +874,81 @@ export default function DiarioEstoicoPage() {
           />
         )}
 
+        {/* Índice do livro (logado): partes e meses como sumário */}
+        {user && (
+          <nav className="reino-corpo reino-diario" aria-label="Índice do Diário Estoico">
+            <p className="reino-rotulo">Índice · 3 partes, 12 meses</p>
+            {PARTS.map((part, partIndex) => {
+              const partMonths = MONTH_THEMES.filter((m) => part.monthIds.includes(m.id));
+              const isPartOpen = openPart === part.number;
+              const reflexoesDaParte = partMonths.reduce(
+                (acc, m) => acc + availableMaxims.filter((x) => x.month === m.monthName).length,
+                0,
+              );
+              return (
+                <section key={part.number} className="reino-diario__parte">
+                  <button
+                    type="button"
+                    className="reino-diario__cabeca"
+                    aria-expanded={isPartOpen}
+                    onClick={() => {
+                      setOpenPart(isPartOpen ? null : part.number);
+                      mixpanel.track('Diário · Parte alternada', { part: part.number, action: isPartOpen ? 'close' : 'open', user_id: user?.id });
+                    }}
+                  >
+                    <span className="reino-diario__numeral" aria-hidden="true">
+                      {part.number}
+                    </span>
+                    <span className="reino-diario__titulos">
+                      <span className="reino-rotulo">Parte {['um', 'dois', 'três'][partIndex]}</span>
+                      <span className="reino-diario__titulo">{part.title}</span>
+                    </span>
+                    <span className="reino-diario__conta">
+                      {reflexoesDaParte > 0 ? `${reflexoesDaParte} reflexões` : 'em breve'}
+                      <span className="reino-diario__abrir" aria-hidden="true">
+                        {isPartOpen ? 'fechar' : 'abrir'}
+                      </span>
+                    </span>
+                  </button>
+
+                  {isPartOpen && (
+                    <ol className="reino-sumario reino-diario__meses">
+                      {partMonths.map((month) => {
+                        const isActive = openMonth === month.id;
+                        const hasToday = todayMaxim?.month === month.monthName;
+                        const qtd = availableMaxims.filter((m) => m.month === month.monthName).length;
+                        return (
+                          <li key={month.id} className={isActive ? 'is-aberto' : undefined}>
+                            <button
+                              type="button"
+                              className="reino-sessao"
+                              aria-pressed={isActive}
+                              onClick={() => {
+                                setOpenMonth(isActive ? null : month.id);
+                                mixpanel.track('Diário · Aba mês clicada', { month: month.id, action: isActive ? 'close' : 'open', user_tier: tier, is_guest: !user, user_id: user?.id });
+                              }}
+                            >
+                              <span className="reino-sumario__n">{month.shortName}</span>
+                              <span className="reino-sessao__texto">
+                                <span className="reino-sumario__t">{month.theme.charAt(0) + month.theme.slice(1).toLowerCase()}</span>
+                                {month.themeDescription && <span className="reino-sessao__descricao">{month.themeDescription}</span>}
+                              </span>
+                              <span className={`reino-sumario__m${hasToday ? ' reino-diario__hoje' : ''}`}>
+                                {hasToday ? 'você está aqui' : qtd > 0 ? `${qtd} reflexões` : 'em breve'}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  )}
+                </section>
+              );
+            })}
+          </nav>
+        )}
+
+        {!user && (<>
         {/* Partes — seleção de mês */}
         <div className="w-full px-4 pt-8 md:px-8 pb-4 space-y-10">
           <div className="mx-auto max-w-3xl space-y-10">
@@ -889,7 +964,7 @@ export default function DiarioEstoicoPage() {
                     type="button"
                     onClick={() => {
                       setOpenPart(isPartOpen ? null : part.number);
-                      mixpanel.track('Diário · Parte alternada', { part: part.number, action: isPartOpen ? 'close' : 'open', user_id: user?.id });
+                      mixpanel.track('Diário · Parte alternada', { part: part.number, action: isPartOpen ? 'close' : 'open', user_id: undefined });
                     }}
                     aria-expanded={isPartOpen}
                     className="w-full mb-5 flex items-center gap-4 text-left rounded-2xl transition-colors duration-200
@@ -931,12 +1006,12 @@ export default function DiarioEstoicoPage() {
                           key={month.id}
                           onClick={() => {
                             if (!isUnlocked) {
-                              mixpanel.track('Diário · Mês bloqueado clicado', { month: month.id, theme: month.theme, user_tier: tier, user_id: user?.id });
+                              mixpanel.track('Diário · Mês bloqueado clicado', { month: month.id, theme: month.theme, user_tier: tier, user_id: undefined });
                               setShowUpgradeModal(true);
                               return;
                             }
                             setOpenMonth(isActive ? null : month.id);
-                            mixpanel.track('Diário · Aba mês clicada', { month: month.id, action: isActive ? 'close' : 'open', user_tier: tier, is_guest: !user, user_id: user?.id });
+                            mixpanel.track('Diário · Aba mês clicada', { month: month.id, action: isActive ? 'close' : 'open', user_tier: tier, is_guest: !user, user_id: undefined });
                           }}
                           className={`relative flex flex-col rounded-2xl overflow-hidden text-left transition-all duration-300 active:scale-[0.97]
                             ${isActive
@@ -1019,9 +1094,122 @@ export default function DiarioEstoicoPage() {
             })}
           </div>
         </div>
+        </>)}
 
-        {/* Reflexões do mês selecionado */}
-        {openMonth && (() => {
+        {/* Reflexões do mês (logado): páginas do livro, sem foto nem selo */}
+        {user && openMonth && (() => {
+          const month = MONTH_THEMES.find(m => m.id === openMonth);
+          if (!month) return null;
+          const monthMaxims = availableMaxims.filter(
+            m => m.month === month.monthName &&
+                 !(featuredMaxim && m.month === featuredMaxim.month && m.dayNumber === featuredMaxim.dayNumber)
+          );
+          const tema = month.theme.charAt(0) + month.theme.slice(1).toLowerCase();
+
+          return (
+            <section className="reino-corpo reino-diario reino-diario-mes" aria-labelledby="diario-mes-titulo">
+              <header className="reino-diario-mes__cabeca">
+                <p className="reino-rotulo">{month.displayName}</p>
+                <h2 id="diario-mes-titulo" className="reino-diario-mes__tema">{tema}</h2>
+                {month.themeDescription && <p className="reino-diario-mes__sobre">{month.themeDescription}</p>}
+              </header>
+
+              {monthMaxims.length === 0 ? (
+                <p className="reino-diario-mes__vazio">
+                  {featuredMaxim && featuredMaxim.month === month.monthName
+                    ? 'A reflexão de hoje está no alto da página. As próximas deste mês chegam em breve.'
+                    : 'As reflexões deste mês ainda não chegaram.'}
+                </p>
+              ) : (
+                <ol className="reino-diario-mes__paginas">
+                  {monthMaxims.map((maxim) => {
+                    const isToday = todayMaxim?.dayNumber === maxim.dayNumber && todayMaxim?.month === maxim.month;
+                    const isExpanded = expandedCards.has(maxim.dayNumber);
+                    const lida = readDays.has(maxim.dayNumber);
+                    const paragrafos = maxim.comment ? maxim.comment.split('\n\n').filter(Boolean) : [];
+                    return (
+                      <li key={maxim.dayNumber} className={`reino-diario-pagina${isExpanded ? ' is-aberta' : ''}`}>
+                        <button
+                          type="button"
+                          className="reino-diario-pagina__cabeca"
+                          aria-expanded={isExpanded}
+                          onClick={() => toggleExpanded(maxim.dayNumber)}
+                        >
+                          <span className="reino-diario-pagina__data">
+                            {maxim.date.toLowerCase()}
+                            {isToday && <span className="reino-diario-pagina__marca is-hoje">hoje</span>}
+                            {lida && <span className="reino-diario-pagina__marca">lida</span>}
+                          </span>
+                          <span className="reino-diario-pagina__titulo">{maxim.title}</span>
+                          <span className="reino-diario-pagina__autor">
+                            {maxim.author}
+                            {maxim.source && `, ${maxim.source}`}
+                          </span>
+                          <span className="reino-diario__abrir" aria-hidden="true">
+                            {isExpanded ? 'fechar' : 'ler'}
+                          </span>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="reino-diario-pagina__corpo">
+                            <blockquote className="reino-diario-pagina__citacao">{maxim.text}</blockquote>
+                            {paragrafos.length > 0 && (
+                              <div className="reino-diario-pagina__comentario">
+                                <p className="reino-rotulo">Comentário</p>
+                                {paragrafos.map((para, i) => (
+                                  <p key={i}>{para}</p>
+                                ))}
+                              </div>
+                            )}
+                            <div className="reino-diario-pagina__acoes">
+                              <button
+                                type="button"
+                                className="reino-placa"
+                                onClick={() => {
+                                  setReadingModeMaxim(maxim);
+                                  mixpanel.track('Diário · Modo leitura aberto', { day_number: maxim.dayNumber, is_guest: false });
+                                }}
+                              >
+                                Ler em página inteira
+                              </button>
+                              {lida ? (
+                                <span className="reino-diario-pagina__lida">Reflexão lida</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="reino-chegada__voltar"
+                                  onClick={() => {
+                                    markDayAsRead(maxim.dayNumber);
+                                    mixpanel.track('Diário · Marcado como lido', { day_number: maxim.dayNumber, is_guest: false, method: 'button' });
+                                  }}
+                                >
+                                  Marcar como lida
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="reino-chegada__voltar"
+                                onClick={() => {
+                                  setShareModalMaxim(maxim);
+                                  mixpanel.track('Diário · Compartilhar aberto', { day_number: maxim.dayNumber, is_guest: false });
+                                }}
+                              >
+                                Partilhar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </section>
+          );
+        })()}
+
+        {/* Reflexões do mês selecionado (visitante) */}
+        {!user && openMonth && (() => {
           const month = MONTH_THEMES.find(m => m.id === openMonth);
           if (!month) return null;
           // Não repetir aqui a reflexão que já está em destaque no hero do topo.
@@ -1057,7 +1245,7 @@ export default function DiarioEstoicoPage() {
                     {monthMaxims.length === 0 && (
                       <p className="text-center text-sm text-eco-muted py-8 w-full">
                         {featuredMaxim && featuredMaxim.month === month.monthName
-                          ? 'A reflexão de hoje está em destaque acima ☝️ — novas reflexões deste mês chegam em breve.'
+                          ? 'A reflexão de hoje está em destaque acima. Novas reflexões deste mês chegam em breve.'
                           : 'Nenhuma reflexão disponível ainda.'}
                       </p>
                     )}
