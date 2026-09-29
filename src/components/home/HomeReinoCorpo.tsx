@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ProgramProgressData } from '@/hooks/useProgramProgress';
 import { PincelProgresso } from '@/components/reino/ReinoScene';
+import { OFFER } from '@/constants/offerCopy';
 import '@/components/reino/reino.css';
 
 export interface Jornada {
@@ -216,7 +217,10 @@ export default function HomeReinoCorpo({
         {onAssinar && (
           <section className="reino-corpo__secao reino-convite" aria-labelledby="reino-convite">
             <h2 id="reino-convite" className="reino-corpo__titulo">Você começou uma jornada. Não pare agora.</h2>
-            <p className="reino-corpo__sobre">50% OFF por tempo limitado. Sua continuação vale isso.</p>
+            {/* A oferta que existe de verdade no /assinar (fonte única: offerCopy). */}
+            <p className="reino-corpo__sobre">
+              {OFFER.trial}, depois {OFFER.priceMonthly}. Cancele quando quiser.
+            </p>
             <button type="button" className="reino-placa" onClick={onAssinar}>
               Quero continuar <span aria-hidden="true">→</span>
             </button>
