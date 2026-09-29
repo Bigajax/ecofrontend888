@@ -58,7 +58,7 @@ export function ReinoPintura({ regiao, foco = '50% 50%', className }: ReinoPintu
       height={900}
       alt=""
       decoding="async"
-      fetchPriority="high"
+      {...{ fetchpriority: 'high' }}
       className={className}
       style={{ objectFit: 'cover', objectPosition: foco }}
     />

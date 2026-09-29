@@ -1598,3 +1598,35 @@
 .reino-carregando.is-inline {
   --c-fg2: #5b6080;
 }
+
+/* ===================== Código da Abundância ===================== */
+.reino-abundancia__lista {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.reino-abundancia__lista li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  color: var(--r-fg);
+  font-size: 16px;
+  line-height: 1.45;
+}
+.reino-abundancia__lista li::before {
+  content: '';
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--r-ocre);
+  transform: translateY(-3px);
+}
+.reino-abundancia__porque {
+  margin-top: 56px;
+}
+.reino-sessoes__entre .reino-convite {
+  padding-top: 12px;
+}

@@ -199,6 +199,39 @@
       </div>
     </div>
 
+    <!-- No app logado (/app), a primeira tela já é o reino se desenhando, na cor da hora de Brasília.
+         Landing e funil seguem com a tela acima. -->
+    <script>
+      (function () {
+        if (location.pathname.indexOf('/app') !== 0) return;
+        var el = document.getElementById('loading-fallback');
+        if (!el) return;
+        var h = 20;
+        try {
+          h = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
+        } catch (e) {}
+        var c = h >= 5 && h < 12
+          ? { bg: '#F1E8D6', fg: '#2A2238', linha: '#C98E86' }
+          : h >= 12 && h < 20
+          ? { bg: '#4A1F2E', fg: '#F4E7DE', linha: '#EDB85A' }
+          : { bg: '#10153A', fg: '#F4F1E8', linha: '#EDB85A' };
+        el.style.background = c.bg;
+        el.style.flexDirection = 'column';
+        el.innerHTML =
+          '<style>@keyframes rR{0%{stroke-dashoffset:16;opacity:.2}45%,80%{stroke-dashoffset:0;opacity:1}100%{opacity:0}}' +
+          '@keyframes rH{0%{stroke-dashoffset:240}60%,85%{stroke-dashoffset:0;opacity:1}100%{opacity:0}}' +
+          '@media (prefers-reduced-motion:reduce){#loading-fallback path{animation:none!important;stroke-dashoffset:0!important}}</style>' +
+          '<svg viewBox="0 0 120 120" width="96" height="96" aria-hidden="true" style="overflow:visible">' +
+          '<g fill="none" stroke="#EDB85A" stroke-width="5" stroke-linecap="round" style="stroke-dasharray:16;stroke-dashoffset:16;animation:rR 2.6s ease-in-out infinite">' +
+          '<path d="M60 14v14M60 92v14M14 60h14M92 60h14M27.5 27.5l10 10M82.5 82.5l10 10M92.5 27.5l-10 10M37.5 82.5l-10 10"/></g>' +
+          '<path fill="#EDB85A" d="M61.6 33.8c14.6.8 26 12.6 25 28-1 15.2-13.6 25.6-28 24.6-13.9-1-24.7-13.1-23.6-27.3 1-14.4 12.2-26 26.6-25.3Z"/>' +
+          '<path fill="none" stroke="#F6D48C" stroke-width="4" stroke-linecap="round" d="M47.5 52c6.4-7.4 17.4-8.2 23.6.6"/></svg>' +
+          '<svg viewBox="0 0 240 12" width="180" height="12" preserveAspectRatio="none" aria-hidden="true" style="margin-top:10px">' +
+          '<path fill="none" stroke="' + c.linha + '" stroke-width="2.2" stroke-linecap="round" style="stroke-dasharray:240;stroke-dashoffset:240;animation:rH 2.6s ease-in-out infinite" d="M4 7.2C40 3.6 82 9.4 122 6.2s78-4.2 114 1.4"/></svg>' +
+          '<p style="margin:20px 0 0;font:400 22px/1.25 \'Young Serif\',Georgia,serif;color:' + c.fg + '">Abrindo o reino</p>';
+      })();
+    </script>
+
     <!-- Animação do spinner -->
     <style>
       @keyframes spin {

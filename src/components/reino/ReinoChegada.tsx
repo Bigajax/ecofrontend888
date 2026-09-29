@@ -43,7 +43,7 @@ export default function ReinoChegada({
     <section className="reino-hero reino-chegada" data-mood={mood} aria-labelledby="reino-chegada-titulo">
       <div className="reino-hero__grade">
         <div className="reino-hero__cena reino-rasgo-a">
-          <img src={imagem} alt="" decoding="async" fetchPriority="high" style={{ objectFit: 'cover', objectPosition: foco }} />
+          <img src={imagem} alt="" decoding="async" {...{ fetchpriority: 'high' }} style={{ objectFit: 'cover', objectPosition: foco }} />
         </div>
 
         <div className="reino-hero__texto">
