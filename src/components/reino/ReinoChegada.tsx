@@ -79,6 +79,8 @@ export interface ReinoSessao {
   descricao?: string;
   meta: string;
   estado?: 'feita' | 'proxima' | 'trancada' | 'livre';
+  /** conteúdo extra que abre em "Saber mais" embaixo da sessão */
+  detalhe?: ReactNode;
 }
 
 /** A lista de sessões de um programa, como sumário de livro. */
@@ -104,6 +106,12 @@ export function ReinoSessoes({
             </span>
             <span className="reino-sumario__m">{s.meta}</span>
           </button>
+          {s.detalhe && (
+            <details className="reino-sessao__detalhe">
+              <summary>Saber mais</summary>
+              <div className="reino-sessao__detalhe-corpo">{s.detalhe}</div>
+            </details>
+          )}
           {depoisDe && depoisDe.indice === i && <div className="reino-sessoes__entre">{depoisDe.conteudo}</div>}
         </li>
       ))}

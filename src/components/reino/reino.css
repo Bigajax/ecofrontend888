@@ -1630,3 +1630,103 @@
 .reino-sessoes__entre .reino-convite {
   padding-top: 12px;
 }
+
+/* ===================== "saber mais" e Dr. Joe ===================== */
+.reino-sessao__detalhe {
+  margin: -6px 0 14px 40px;
+}
+.reino-sessao__detalhe > summary {
+  display: inline-block;
+  padding: 4px 0;
+  color: var(--r-fg2);
+  font: 500 13.5px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 4px;
+  cursor: pointer;
+  list-style: none;
+}
+.reino-sessao__detalhe > summary::-webkit-details-marker {
+  display: none;
+}
+.reino-sessao__detalhe[open] > summary {
+  color: var(--r-fg);
+  text-decoration-color: var(--r-ocre);
+}
+.reino-sessao__detalhe-corpo {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding-left: 14px;
+  border-left: 3px solid var(--r-ocre);
+  color: var(--r-fg2);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+.reino-sessao__detalhe-corpo p {
+  margin: 0;
+}
+.reino-sessao__detalhe-corpo strong {
+  color: var(--r-fg);
+  font-weight: 600;
+}
+.reino-sessao__nota {
+  font: 400 13px/1.55 var(--r-mono);
+}
+.reino-sessao__detalhe-corpo blockquote,
+.reino-drjoe__citacao {
+  margin: 0;
+  font: 400 18px/1.4 var(--r-display);
+  color: var(--r-fg);
+}
+.reino-drjoe__citacao small,
+.reino-sessao__detalhe-corpo blockquote small {
+  display: block;
+  margin-top: 6px;
+  font: 400 11.5px var(--r-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--r-fg2);
+}
+.reino-drjoe__como {
+  margin-top: 44px;
+}
+.reino-drjoe__como > .reino-sessao__detalhe {
+  margin-left: 0;
+}
+.reino-drjoe__passos {
+  margin: 8px 0 18px;
+}
+.reino-drjoe__citacao {
+  padding: 14px 0 4px;
+}
+.reino-drjoe__fecho {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px dashed var(--r-trilho);
+  font-size: 24px;
+}
+/* ciclo completo: uma página que se abre sobre a noite */
+.reino-drjoe__ciclo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 21, 58, 0.94);
+}
+.reino-drjoe__ciclo-caixa {
+  width: min(100%, 30rem);
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  padding: 28px 24px 30px;
+  background: var(--r-papel);
+  color: var(--r-anil);
+}
+.reino-drjoe__numeros {
+  margin: 0;
+  font: 400 12.5px var(--r-mono);
+  color: #5b6080;
+}
