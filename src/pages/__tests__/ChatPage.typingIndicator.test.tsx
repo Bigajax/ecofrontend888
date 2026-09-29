@@ -197,11 +197,6 @@ vi.mock('../../components/QuickSuggestions', () => ({
   default: () => null,
 }));
 
-vi.mock('../../components/TypingDots', () => ({
-  __esModule: true,
-  default: () => <div data-testid="typing-dots">digitando…</div>,
-}));
-
 vi.mock('../../components/MessageList', async () => {
   const React = await import('react');
   const chatContext = await import('../../contexts/ChatContext');
@@ -265,14 +260,6 @@ vi.mock('../../api/mensagem', () => ({
     conteudo: 'olá',
     usuario_id: 'user-123',
   }),
-}));
-
-vi.mock('../../utils/extrairTagsRelevantes', () => ({
-  extrairTagsRelevantes: () => [],
-}));
-
-vi.mock('../../utils/celebrateFirstMemory', () => ({
-  celebrateFirstMemory: vi.fn(),
 }));
 
 vi.mock('../../api/ecoApi', () => ({
