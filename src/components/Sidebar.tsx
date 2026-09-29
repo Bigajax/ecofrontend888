@@ -1,4 +1,5 @@
-import type { ComponentType } from 'react';
+import { useState, type ComponentType } from 'react';
+import FeedbackModal from '@/components/FeedbackModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 import {
@@ -32,7 +33,6 @@ const navItems: { id: string; label: string; curto: string; glifo: Glifo; path: 
   { id: 'reports', label: 'Relatórios', curto: 'Relatórios', glifo: GlifoRelatorio, path: '/app/memory/report' },
 ];
 
-const FEEDBACK_URL = 'https://feedback777.vercel.app/';
 
 export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', onLogout }: SidebarProps) {
   const navigate = useNavigate();
@@ -56,9 +56,10 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
     if (onLogout) onLogout();
   };
 
-  const handleFeedback = () => {
-    window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer');
-  };
+  // O recado abre aqui mesmo, num modal do reino (antes abria outro site numa aba nova).
+  const [feedbackAberto, setFeedbackAberto] = useState(false);
+  const handleFeedback = () => setFeedbackAberto(true);
+  const recado = <FeedbackModal isOpen={feedbackAberto} onClose={() => setFeedbackAberto(false)} />;
 
   if (variant === 'mobile') {
     return (
@@ -108,6 +109,7 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
             </button>
           </div>
         </aside>
+        {recado}
       </>
     );
   }
@@ -144,6 +146,7 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
 
   // Lateral no desktop
   return (
+    <>
     <aside className="reino-corpo reino-casa-lateral hidden lg:flex" aria-label="Casa da Eco">
       <p className="reino-casa-lateral__codigo">ECO.01</p>
       <nav className="reino-casa-lateral__nav">
@@ -177,5 +180,7 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
         </button>
       </div>
     </aside>
+    {recado}
+    </>
   );
 }

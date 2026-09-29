@@ -41,7 +41,6 @@ const drawerIconButtonClass = [
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
 ].join(' ');
 
-const FEEDBACK_URL = 'https://feedback777.vercel.app/';
 
 const Header: React.FC<HeaderProps> = ({
   title,

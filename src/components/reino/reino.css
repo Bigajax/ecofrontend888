@@ -3568,3 +3568,79 @@
   font: 400 12.5px var(--r-mono);
   color: var(--r-fg2);
 }
+
+/* ── Recado (feedback), na mesma folha do convite (set/2026) ── */
+.reino-feedback__folha {
+  position: relative;
+  max-width: 460px;
+}
+.reino-feedback__fechar {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg2);
+  font: 500 13px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.reino-feedback__pena {
+  width: 34px;
+  height: 34px;
+  color: var(--r-anil);
+}
+.reino-feedback__tipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.reino-feedback__tipo {
+  padding: 8px 12px;
+  border: 1.5px solid rgba(28, 35, 80, 0.25);
+  border-radius: 3px 7px 4px 8px;
+  background: #fbf9f3;
+  color: var(--r-anil);
+  font: 500 14px var(--r-ui);
+  cursor: pointer;
+}
+.reino-feedback__tipo.is-ativo {
+  border-color: var(--r-anil);
+  background: var(--r-anil);
+  color: var(--r-papel);
+}
+.reino-feedback__campo {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+}
+.reino-feedback__campo textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(28, 35, 80, 0.35);
+  border-radius: 6px;
+  background: #fbf9f3;
+  color: var(--r-anil);
+  font: 400 16px/1.5 var(--r-ui);
+  resize: vertical;
+  box-shadow: 0 3px 0 -1px rgba(28, 35, 80, 0.1);
+}
+.reino-feedback__campo textarea:focus {
+  outline: none;
+  border-color: var(--r-anil);
+  box-shadow: 0 3px 0 -1px var(--r-ocre);
+}
+.reino-feedback__erro {
+  margin: 10px 0 0;
+  font: 500 14px/1.45 var(--r-ui);
+  color: #9b3b2f;
+}
+.reino-feedback .reino-placa:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
