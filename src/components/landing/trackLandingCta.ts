@@ -31,8 +31,18 @@ export function paginaFromPath(pathname: string = window.location.pathname): str
   return PAGINA_BY_PATH[clean] ?? clean;
 }
 
+export type LandingSection =
+  | 'hero'
+  | 'pricing'
+  | 'pricing_page'
+  | 'fechamento'
+  | 'objections'
+  | 'biblioteca'
+  | 'topbar'
+  | 'sticky';
+
 type CtaPayload = {
-  section: 'hero' | 'pricing' | 'pricing_page' | 'fechamento' | 'objections' | 'biblioteca';
+  section: LandingSection;
   plan?: 'monthly' | 'annual';
   from: string;
   headline_variant?: '1' | '2';

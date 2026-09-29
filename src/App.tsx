@@ -228,7 +228,10 @@ function PublicHome() {
 
   // Authenticated users (não-guest) sempre vão direto para o dashboard.
   // Não-auth e guest mode veem a Landing de venda.
-  if (!loading && user && !isGuestMode) {
+  // Só em dev: /?previa=1 mostra a landing mesmo logado (para revisar o visual).
+  const previa =
+    import.meta.env.DEV && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('previa') === '1';
+  if (!loading && user && !isGuestMode && !previa) {
     return <Navigate to="/app" replace />;
   }
 
