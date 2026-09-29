@@ -4374,3 +4374,175 @@
   border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%;
   background: var(--r-musgo);
 }
+
+/* ── Som de fundo: a folha da noite (set/2026) ── */
+.reino-sons {
+  --r-bg: #10153a;
+  --r-fg: #f4f1e8;
+  --r-fg2: rgba(244, 241, 232, 0.66);
+  --r-trilho: rgba(244, 241, 232, 0.24);
+  --r-ocre: #edb85a;
+  --r-papel: #f4f1e8;
+  --r-display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+  --r-ui: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --r-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 10, 30, 0.62);
+}
+@media (min-width: 640px) {
+  .reino-sons {
+    align-items: center;
+  }
+}
+.reino-sons__folha {
+  width: 100%;
+  max-width: 460px;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--r-bg);
+  color: var(--r-fg);
+  border: 1px solid var(--r-trilho);
+  border-radius: 5px 10px 6px 11px;
+  box-shadow: 0 4px 0 -1px var(--r-ocre);
+  overflow: hidden;
+}
+.reino-sons__topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 20px 12px;
+}
+.reino-sons__titulo {
+  margin: 0;
+  font: 400 26px/1.1 var(--r-display);
+}
+.reino-sons__sub {
+  margin: 4px 0 0;
+  font: 400 14px var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-sons__fechar {
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg);
+  font: 500 14px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.reino-sons__volume {
+  margin: 0 20px 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--r-trilho);
+  border-radius: 4px 8px 5px 9px;
+}
+.reino-sons__corpo {
+  overflow-y: auto;
+  padding: 10px 20px 22px;
+}
+.reino-sons__silencio {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px dashed var(--r-trilho);
+  border-radius: 4px 8px 5px 9px;
+  background: none;
+  color: var(--r-fg);
+  font: 400 18px var(--r-display);
+  text-align: left;
+  cursor: pointer;
+}
+.reino-sons__silencio span {
+  font: 400 12px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-sons__silencio.is-escolhido {
+  border-style: solid;
+  border-color: var(--r-ocre);
+}
+.reino-sons__grupo {
+  margin-top: 18px;
+}
+.reino-sons__rotulo {
+  margin: 0 0 10px;
+  font: 400 12px var(--r-mono);
+  letter-spacing: 0.04em;
+  color: var(--r-fg2);
+}
+.reino-sons__lista {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.reino-sons__som {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg);
+  text-align: center;
+  cursor: pointer;
+}
+.reino-sons__som:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+.reino-sons__pintura {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+.reino-sons__pintura img,
+.reino-sons__pintura span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reino-sons__som.is-escolhido .reino-sons__pintura {
+  border-color: var(--r-ocre);
+  box-shadow: 0 0 0 5px rgba(237, 184, 90, 0.22);
+}
+.reino-sons__nome {
+  font: 400 15px/1.2 var(--r-display);
+}
+.reino-sons__meta {
+  font: 400 11px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-sons__som.is-escolhido .reino-sons__meta {
+  color: var(--r-ocre);
+}
+.reino-sons :is(button, input):focus-visible {
+  outline: 2px solid var(--r-ocre);
+  outline-offset: 3px;
+}
+/* o reino define cor de título e botão no documento; aqui a folha é noite */
+.reino-sons .reino-sons__titulo,
+.reino-sons .reino-sons__nome,
+.reino-sons .reino-sons__silencio,
+.reino-sons .reino-sons__fechar,
+.reino-sons .reino-player__canal-nome {
+  color: #f4f1e8;
+}

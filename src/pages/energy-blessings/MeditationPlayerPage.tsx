@@ -266,8 +266,10 @@ export default function MeditationPlayerPage() {
   const [savedProgress, setSavedProgress] = useState<number | null>(null);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
 
-  // Ambient screen (anti-abandonment) — aparece após 3 min de play sem interação
-  const AMBIENT_INACTIVITY_MS = 15 * 1000;
+  // Ambient screen (anti-abandonment) — aparece após 3 min de play sem interação.
+  // Estava em 15 s (valor de teste): a tela trocava enquanto a pessoa ainda
+  // ajustava a voz ou escolhia o som de fundo (set/2026).
+  const AMBIENT_INACTIVITY_MS = 3 * 60 * 1000;
   const [showAmbient, setShowAmbient] = useState(false);
   const ambientTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -284,7 +286,8 @@ export default function MeditationPlayerPage() {
 
   // Inicia/reinicia o timer quando play começa; cancela quando pausa ou conclui
   useEffect(() => {
-    if (isPlaying && !showCompletionScreen) {
+    // Com o modal de som aberto, a pessoa está mexendo: nada de descanso de tela.
+    if (isPlaying && !showCompletionScreen && !isBackgroundModalOpen) {
       resetAmbientTimer();
     } else {
       clearAmbientTimer();
@@ -292,7 +295,7 @@ export default function MeditationPlayerPage() {
     }
     return () => clearAmbientTimer();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, showCompletionScreen]);
+  }, [isPlaying, showCompletionScreen, isBackgroundModalOpen]);
 
   // Scroll para o topo quando a página carregar
   useEffect(() => {
@@ -1784,6 +1787,10 @@ export default function MeditationPlayerPage() {
         onSelectSound={handleSelectBackgroundSound}
         backgroundVolume={backgroundVolume}
         onVolumeChange={setBackgroundVolume}
+        onClear={() => {
+          previousBackgroundSound.current = null;
+          setSelectedBackgroundSound(null);
+        }}
       />
 
       {/* Dica de tela bloqueada — aparece uma vez após o áudio iniciar */}
