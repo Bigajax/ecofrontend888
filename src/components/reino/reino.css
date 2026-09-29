@@ -196,7 +196,7 @@
   transform: translateX(1px);
 }
 
-.reino-hero__secao {
+.reino-hero .reino-rotulo.reino-hero__secao {
   margin-top: 30px;
   margin-bottom: 4px;
 }
