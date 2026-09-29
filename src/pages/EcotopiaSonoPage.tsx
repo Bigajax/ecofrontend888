@@ -145,7 +145,7 @@ export default function EcotopiaSonoPage() {
         mood="noite"
         imagem="/images/reino/vale.webp"
         foco="45% 50%"
-        lugar="SOM.02 · Vale do Sono · Protocolo do Sono"
+        lugar="Vale do Sono"
         titulo={titulo}
         sobre={hero.lead}
       >
@@ -164,10 +164,6 @@ export default function EcotopiaSonoPage() {
           <h2 id="rl-cena" className="rl-titulo">
             Você conhece essa cena.
           </h2>
-          <p className="rl-sobre">
-            Você apaga a luz cansado. Mas, em vez de relaxar, a mente acelera: o que ficou pendente, o que vem amanhã,
-            aquilo que você não devia ter dito.
-          </p>
           <ul className="rl-dores">
             <li>
               <span className="rl-dores__titulo">Deito cansado, mas a mente não desliga.</span>
@@ -195,22 +191,18 @@ export default function EcotopiaSonoPage() {
             <li>
               <span className="rl-passos__n">01</span>
               <span className="rl-passos__titulo">Apague a luz</span>
-              <span className="rl-passos__texto">Deite-se como já faria normalmente.</span>
             </li>
             <li>
               <span className="rl-passos__n">02</span>
               <span className="rl-passos__titulo">Coloque os fones</span>
-              <span className="rl-passos__texto">A voz guia o corpo para sair do modo alerta.</span>
             </li>
             <li>
               <span className="rl-passos__n">03</span>
               <span className="rl-passos__titulo">Dê play na Noite 1</span>
-              <span className="rl-passos__texto">Você só precisa ouvir. O resto a voz conduz.</span>
             </li>
             <li>
               <span className="rl-passos__n">04</span>
               <span className="rl-passos__titulo">Repita por 7 noites</span>
-              <span className="rl-passos__texto">Cada noite prepara a próxima.</span>
             </li>
           </ol>
 
@@ -248,14 +240,9 @@ export default function EcotopiaSonoPage() {
         </section>
 
         <section className="rl-secao" id="as-7-noites" ref={noitesRef} aria-labelledby="rl-noites">
-          <p className="reino-rotulo">O protocolo</p>
           <h2 id="rl-noites" className="rl-titulo">
             Sete noites, uma sequência
           </h2>
-          <p className="rl-sobre">
-            Cada noite trabalha uma parte do estado de alerta: respiração, controle mental, tensão do corpo, pensamentos
-            repetitivos e segurança interna.
-          </p>
           <ol className="rl-noites">
             {PROTOCOL_NIGHTS.map((n) => (
               <li key={n.id}>
@@ -267,7 +254,6 @@ export default function EcotopiaSonoPage() {
                   <span className="rl-noites__n">Noite {n.night}</span>
                   <span className="rl-noites__texto">
                     <span className="rl-noites__titulo">{n.title}</span>
-                    <span className="rl-noites__desc">{n.description}</span>
                   </span>
                   <span className="rl-noites__meta">{n.isFree ? `${n.duration} · grátis` : n.duration}</span>
                 </Link>
@@ -278,52 +264,31 @@ export default function EcotopiaSonoPage() {
 
         <section className="rl-secao" ref={diferencialRef} aria-labelledby="rl-diferencial">
           <h2 id="rl-diferencial" className="rl-titulo">
-            Não é uma biblioteca de meditações. É um caminho de 7 noites.
+            Não é uma biblioteca. É um caminho.
           </h2>
-          <p className="rl-sobre">
-            Quando você está exausto, a última coisa que precisa é escolher entre centenas de áudios. Aqui, a noite de
-            hoje já está pronta.
-          </p>
           <ul className="rl-dentro" style={{ '--rl-cols': 3 } as CSSProperties}>
             <li>
               <span className="rl-dentro__titulo">Você não escolhe o que fazer</span>
-              <span className="rl-dentro__texto">A prática da noite já está pronta. É deitar, dar play e seguir a voz.</span>
             </li>
             <li>
               <span className="rl-dentro__titulo">Cada noite prepara a próxima</span>
-              <span className="rl-dentro__texto">
-                A sequência começa tirando o corpo do modo alerta e avança para pensamentos, tensão e sono profundo.
-              </span>
             </li>
             <li>
               <span className="rl-dentro__titulo">Não depende de força de vontade</span>
-              <span className="rl-dentro__texto">
-                Feito para o momento em que você está cansado demais para pensar em técnica.
-              </span>
             </li>
           </ul>
         </section>
 
         <section className="rl-secao rl-preco" ref={ofertaRef} aria-labelledby="rl-oferta">
-          <p className="reino-rotulo">Como funciona o acesso</p>
           <h2 id="rl-oferta" className="rl-titulo">
             Comece pela Noite 1, grátis
           </h2>
-          <p className="rl-sobre">
-            Ouça a primeira noite agora, sem pagar e sem cadastro. Se fizer sentido, libere as 7 noites com um Pix.
-          </p>
           <div className="rl-sono-oferta">
             <div className="rl-sono-oferta__preco">
               <span className="rl-plano__nome">As 7 noites</span>
               <span className="rl-sono-oferta__valor">{SONO_PIX_PRICE_LABEL}</span>
-              <span className="rl-plano__nota">Pix, pagamento único. Sem assinatura e sem renovação.</span>
+              <span className="rl-plano__nota">Pix, pagamento único. Sem assinatura.</span>
             </div>
-            <ul className="rl-destaques">
-              <li>As 7 noites em sequência, de 5 a 10 minutos cada.</li>
-              <li>Feito para ouvir deitado, com fones.</li>
-              <li>Sem remédio e sem precisar escolher meditações.</li>
-              <li>A Noite 1 é grátis: você ouve antes de decidir.</li>
-            </ul>
           </div>
           <Link
             ref={ofertaCtaRef}
@@ -337,25 +302,14 @@ export default function EcotopiaSonoPage() {
 
         <section className="rl-secao" aria-labelledby="rl-faq">
           <h2 id="rl-faq" className="rl-titulo">
-            Perguntas frequentes
+            Dúvidas
           </h2>
           <div className="rl-faq">
             {[
               ['Preciso saber meditar?', 'Não. As noites são feitas para você só ouvir e acompanhar a voz.'],
-              ['Quanto tempo leva por noite?', 'Entre 5 e 10 minutos. A Noite 1 tem 10.'],
-              ['E se eu dormir antes de acabar?', 'Tudo bem. A ideia é justamente ajudar o corpo a relaxar.'],
-              [
-                'É remédio ou tratamento?',
-                'Não. É uma prática guiada de relaxamento. Se você já toma medicação para dormir, não pare nada por conta própria: converse com o seu médico.',
-              ],
-              [
-                'Quanto custa?',
-                `A Noite 1 é grátis. As 7 noites saem por ${SONO_PIX_PRICE_LABEL} no Pix, um pagamento único, sem assinatura e sem renovação.`,
-              ],
-              [
-                'Preciso criar conta para começar?',
-                'Não. Você ouve a Noite 1 direto. Ao liberar as 7 noites, você cria a conta para guardar o acesso.',
-              ],
+              ['E se eu dormir antes de acabar?', 'Tudo bem. É justamente a ideia.'],
+              ['É remédio?', 'Não. É relaxamento guiado. Se toma medicação, não pare sem falar com o seu médico.'],
+              ['Preciso criar conta?', 'Não para a Noite 1. Só ao liberar as 7 noites.'],
             ].map(([p, r]) => (
               <details key={p}>
                 <summary>{p}</summary>
@@ -367,8 +321,7 @@ export default function EcotopiaSonoPage() {
 
         <div className="rl-secao reino-nota">
           <p>
-            O Protocolo do Sono é uma prática de relaxamento e não substitui acompanhamento médico. Em sofrimento intenso,
-            ligue para o CVV no 188 (gratuito, 24 horas).
+            Não substitui acompanhamento médico. Em sofrimento intenso, ligue para o CVV no 188.
           </p>
         </div>
       </main>

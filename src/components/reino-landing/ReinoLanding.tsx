@@ -14,13 +14,17 @@ import './reino-landing.css';
  * dores, o que tem dentro, passos, perguntas); as peças e a ordem são as mesmas,
  * pensadas para conversão: promessa, para quem é, o que tem, como funciona,
  * preço real, dúvidas, fechamento. Nada de número ou depoimento sem fonte.
+ *
+ * Pouco texto (set/2026, "a landing está muito escrita"): cada bloco é um título
+ * e uma pintura; frase de apoio só onde sem ela não se entende. Quem quer
+ * detalhe abre as perguntas.
  */
 
 export type Plano = 'monthly' | 'annual';
 
 export interface ItemTexto {
   titulo: string;
-  texto: string;
+  texto?: string;
 }
 
 export interface LandingConfig {
@@ -37,11 +41,9 @@ export interface LandingConfig {
   rotulo: string;
   titulo: string;
   sobre: string;
-  /** três fatos curtos sob a promessa */
-  destaques?: string[];
   cta?: string;
   dores?: { titulo: string; itens: ItemTexto[] };
-  dentro?: { rotulo?: string; titulo: string; sobre?: string; itens: (ItemTexto & { imagem?: string; meta?: string })[] };
+  dentro?: { titulo: string; itens: (ItemTexto & { imagem?: string; meta?: string })[] };
   /** mostra as 5 áreas do app com as pinturas (a landing principal e as de módulo) */
   regioes?: boolean;
   passos?: { titulo: string; itens: ItemTexto[] };
@@ -51,15 +53,15 @@ export interface LandingConfig {
   /** aviso de cuidado (ex.: a Eco não substitui terapia) */
   aviso?: ReactNode;
   faq: { p: string; r: ReactNode }[];
-  fechamento: { titulo: string; sobre: string };
+  fechamento: { titulo: string };
 }
 
-const REGIOES: { titulo: string; lugar: string; texto: string; crop: ReinoCrop }[] = [
-  { titulo: 'Conversar com a Eco', lugar: 'Casa da Eco', texto: 'Uma conversa para organizar o que você sente, a qualquer hora.', crop: [0, 190, 460, 460] },
-  { titulo: 'Dormir melhor', lugar: 'Vale do Sono', texto: 'Um protocolo de 7 noites, meditações e sons para desacelerar.', crop: [430, 190, 460, 460] },
-  { titulo: 'Entender um sonho', lugar: 'Lago dos Sonhos', texto: 'Conte um sonho e receba uma leitura inspirada em Freud e Jung.', crop: [880, 190, 460, 460] },
-  { titulo: 'Programas guiados', lugar: 'As Trilhas', texto: 'Meditações e programas de vários dias, um passo por vez.', crop: [1300, 190, 460, 460] },
-  { titulo: 'Reflexão do dia', lugar: 'O Pórtico', texto: 'O Diário Estoico: uma lição curta para cada dia do ano.', crop: [1712, 190, 460, 460] },
+const REGIOES: { titulo: string; lugar: string; crop: ReinoCrop }[] = [
+  { titulo: 'Conversar com a Eco', lugar: 'Casa da Eco', crop: [0, 190, 460, 460] },
+  { titulo: 'Dormir melhor', lugar: 'Vale do Sono', crop: [430, 190, 460, 460] },
+  { titulo: 'Entender um sonho', lugar: 'Lago dos Sonhos', crop: [880, 190, 460, 460] },
+  { titulo: 'Meditar', lugar: 'As Trilhas', crop: [1300, 190, 460, 460] },
+  { titulo: 'Uma reflexão por dia', lugar: 'O Pórtico', crop: [1712, 190, 460, 460] },
 ];
 
 const CENA: Record<ReinoMood, { src: string; foco: string }> = {
@@ -131,13 +133,6 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
         <ReinoChegada mood={mood} imagem={cena.src} foco={cena.foco} lugar={config.rotulo} titulo={config.titulo} sobre={config.sobre}>
           <Botao section="hero" posicao="hero" />
           <p className="rl-oferta-linha">{OFFER.trialAfterPrice}. Cancele quando quiser.</p>
-          {config.destaques && (
-            <ul className="rl-destaques">
-              {config.destaques.map((d) => (
-                <li key={d}>{d}</li>
-              ))}
-            </ul>
-          )}
         </ReinoChegada>
       </div>
 
@@ -152,7 +147,6 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
               {config.dores.itens.map((d) => (
                 <li key={d.titulo}>
                   <span className="rl-dores__titulo">{d.titulo}</span>
-                  <span className="rl-dores__texto">{d.texto}</span>
                 </li>
               ))}
             </ul>
@@ -162,11 +156,9 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
         {/* ── O que tem dentro ── */}
         {config.dentro && (
           <section className="rl-secao" id="o-que-tem" aria-labelledby="rl-dentro">
-            {config.dentro.rotulo && <p className="reino-rotulo">{config.dentro.rotulo}</p>}
             <h2 id="rl-dentro" className="rl-titulo">
               {config.dentro.titulo}
             </h2>
-            {config.dentro.sobre && <p className="rl-sobre">{config.dentro.sobre}</p>}
             <ul
               className="rl-dentro"
               style={{ '--rl-cols': colunasPara(config.dentro.itens.length) } as CSSProperties}
@@ -178,7 +170,7 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
                   )}
                   {item.meta && <span className="rl-dentro__meta">{item.meta}</span>}
                   <span className="rl-dentro__titulo">{item.titulo}</span>
-                  <span className="rl-dentro__texto">{item.texto}</span>
+                  {item.texto && <span className="rl-dentro__texto">{item.texto}</span>}
                 </li>
               ))}
             </ul>
@@ -187,9 +179,8 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
 
         {config.regioes && (
           <section className="rl-secao" id={config.dentro ? undefined : 'o-que-tem'} aria-labelledby="rl-regioes">
-            <p className="reino-rotulo">Tudo o que tem no Ecotopia</p>
             <h2 id="rl-regioes" className="rl-titulo">
-              Cinco lugares, um para cada parte do seu dia
+              Cinco lugares, um para cada parte do dia
             </h2>
             <ul className="rl-regioes">
               {REGIOES.map((r, i) => (
@@ -197,7 +188,6 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
                   <ReinoScene crop={r.crop} small className={i % 2 ? 'reino-rasgo-b' : 'reino-rasgo-a'} />
                   <span className="rl-regioes__titulo">{r.titulo}</span>
                   <span className="rl-regioes__lugar">{r.lugar}</span>
-                  <span className="rl-regioes__texto">{r.texto}</span>
                 </li>
               ))}
             </ul>
@@ -215,7 +205,6 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
                 <li key={p.titulo}>
                   <span className="rl-passos__n">{String(i + 1).padStart(2, '0')}</span>
                   <span className="rl-passos__titulo">{p.titulo}</span>
-                  <span className="rl-passos__texto">{p.texto}</span>
                 </li>
               ))}
             </ol>
@@ -234,23 +223,18 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
 
         {/* ── Preço real, do mesmo arquivo do /assinar ── */}
         <section className="rl-secao rl-preco" id="preco" aria-labelledby="rl-preco">
-          <p className="reino-rotulo">{OFFER.trial}</p>
           <h2 id="rl-preco" className="rl-titulo">
-            Experimente tudo por 7 dias, sem pagar nada
+            7 dias grátis. Depois, você decide.
           </h2>
-          <p className="rl-sobre">
-            O cartão é pedido no cadastro e a primeira cobrança só acontece depois dos 7 dias. Se não fizer sentido,
-            cancele antes e não paga nada.
-          </p>
           <div className="rl-planos" role="radiogroup" aria-label="Escolha o plano">
             {(
               [
-                { id: 'monthly', nome: 'Mensal', preco: OFFER.priceMonthly, nota: 'Renova todo mês.' },
+                { id: 'monthly', nome: 'Mensal', preco: OFFER.priceMonthly, nota: 'Cancele quando quiser.' },
                 {
                   id: 'annual',
                   nome: 'Anual',
                   preco: OFFER.priceAnnualMonthly,
-                  nota: `R$ 142,80 por ano. Economize R$ ${(PRICE.monthly * 12 - PRICE.annualTotal).toFixed(0)}.`,
+                  nota: `R$ 142,80 por ano, R$ ${(PRICE.monthly * 12 - PRICE.annualTotal).toFixed(0)} a menos.`,
                 },
               ] as { id: Plano; nome: string; preco: string; nota: string }[]
             ).map((p) => (
@@ -270,8 +254,7 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
           </div>
           <Botao section="pricing" posicao="preco" />
           <p className="rl-miudo">
-            {OFFER.trial}, depois {precoDoPlano(plano)}.{' '}
-            <Link to="/cancelar-assinatura">Como cancelar</Link>
+            Nada é cobrado nos 7 dias. Depois, {precoDoPlano(plano)}.
           </p>
         </section>
 
@@ -280,7 +263,7 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
         {/* ── Dúvidas ── */}
         <section className="rl-secao" aria-labelledby="rl-faq">
           <h2 id="rl-faq" className="rl-titulo">
-            Perguntas frequentes
+            Dúvidas
           </h2>
           <div className="rl-faq">
             {config.faq.map((f) => (
@@ -299,7 +282,6 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
           <h2 id="rl-fechamento" className="reino-hero__ola">
             {config.fechamento.titulo}
           </h2>
-          <p className="reino-hero__pergunta">{config.fechamento.sobre}</p>
           <Botao section="fechamento" posicao="fechamento" />
           <p className="rl-oferta-linha">{OFFER.trialAfterPrice}. Cancele quando quiser.</p>
         </div>

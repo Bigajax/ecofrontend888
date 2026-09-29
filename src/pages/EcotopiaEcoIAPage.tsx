@@ -9,11 +9,10 @@ import mixpanel from '@/lib/mixpanel';
  */
 const SONHO = (
   <section className="rl-secao rl-sonho" aria-labelledby="rl-sonho">
-    <p className="reino-rotulo">DRM.03 · Lago dos Sonhos</p>
+    <p className="reino-rotulo">Lago dos Sonhos</p>
     <h2 id="rl-sonho" className="rl-titulo">
       O que o seu sonho está tentando dizer?
     </h2>
-    <p className="rl-sobre">Conte um sonho e a Eco faz uma leitura inspirada em Freud e Jung.</p>
     <div className="rl-sonho__cartas">
       <div>
         <p className="reino-rotulo">O sonho</p>
@@ -49,42 +48,15 @@ const ECO_IA: LandingConfig = {
   plano: 'annual',
   mood: 'entardecer',
   imagem: { src: '/images/reino/casa.webp', foco: '15% 50%' },
-  rotulo: 'ECO.01 · Casa da Eco',
+  rotulo: 'Casa da Eco',
   titulo: 'Desabafe a qualquer hora.',
-  sobre:
-    'A Eco escuta sem julgamento, ajuda você a organizar a cabeça e indica a prática certa para agora: ansiedade, sono ou um dia que pesou.',
-  destaques: [
-    'Fale ou escreva: a Eco entende os dois.',
-    'Ela lembra do que vocês já conversaram.',
-    'No meio da conversa, indica uma meditação ou prática.',
-  ],
+  sobre: 'A Eco escuta sem julgar e ajuda a organizar a cabeça.',
   dentro: {
-    rotulo: 'Como a Eco ajuda',
     titulo: 'Não é só desabafar. É sair melhor.',
     itens: [
-      {
-        titulo: 'Organize os pensamentos',
-        texto: 'Trabalho, casa, uma noite sem dormir: a Eco ajuda a colocar em palavras o que você sente e seguir com mais clareza.',
-      },
-      {
-        titulo: 'Receba a prática certa',
-        texto: 'Ela entende o momento e sugere uma meditação, uma respiração ou uma leitura para agora.',
-      },
-      {
-        titulo: 'Retome de onde parou',
-        texto: 'A Eco guarda os temas que importam. Você não precisa contar tudo de novo a cada conversa.',
-      },
-    ],
-  },
-  passos: {
-    titulo: 'Como funciona',
-    itens: [
-      { titulo: 'Fale ou escreva', texto: 'Mande um áudio ou digite. A Eco responde na hora.' },
-      { titulo: 'Receba o próximo passo', texto: 'Uma prática indicada para o seu momento, dentro do próprio app.' },
-      {
-        titulo: 'Acompanhe o que muda',
-        texto: 'Memória, perfil e relatório emocional mostram os seus temas e padrões ao longo do tempo.',
-      },
+      { titulo: 'Fale ou escreva', texto: 'Por áudio ou texto, a qualquer hora.' },
+      { titulo: 'Ela lembra', texto: 'Não precisa contar tudo de novo.' },
+      { titulo: 'Indica uma prática', texto: 'Uma meditação ou respiração para agora.' },
     ],
   },
   extra: SONHO,
@@ -102,29 +74,24 @@ const ECO_IA: LandingConfig = {
   ),
   faq: [
     {
-      p: 'O que é a Eco?',
-      r: 'Uma companheira de IA para conversar sobre o que você sente, refletir e achar a prática certa para o momento.',
-    },
-    {
       p: 'A Eco substitui terapia?',
-      r: 'Não. É um apoio para o dia a dia: desabafo, autoconhecimento e práticas guiadas. Não substitui acompanhamento psicológico ou médico.',
+      r: 'Não. É um apoio para o dia a dia, não um tratamento.',
     },
     {
       p: 'Minhas conversas são privadas?',
-      r: 'Suas conversas ficam na sua conta e não são compartilhadas com outras pessoas do app.',
+      r: 'Ficam na sua conta e ninguém do app vê.',
     },
     {
-      p: 'O que vem além da Eco?',
-      r: 'O plano inclui as meditações guiadas, o Protocolo do Sono, o Diário Estoico, os 5 Anéis da Disciplina e a leitura de sonhos.',
+      p: 'O que mais vem no plano?',
+      r: 'Tudo o que tem no Ecotopia: sono, meditações, Diário Estoico, 5 Anéis e leitura de sonhos.',
     },
     {
-      p: 'Vou ser cobrado antes dos 7 dias?',
-      r: 'Não. O cartão é pedido no cadastro, mas a primeira cobrança só acontece depois dos 7 dias. Se cancelar antes, não paga nada.',
+      p: 'Vou ser cobrado nos 7 dias?',
+      r: 'Não. A primeira cobrança só vem depois. Cancelou antes, não paga nada.',
     },
   ],
   fechamento: {
     titulo: 'Tem algo pesando hoje? Comece por aí.',
-    sobre: 'Sete dias para conversar com a Eco e conhecer tudo o que tem no Ecotopia.',
   },
 };
 
