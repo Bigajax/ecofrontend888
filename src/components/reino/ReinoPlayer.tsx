@@ -24,9 +24,10 @@ interface ReinoPlayerProps {
   onPlayPause: () => void;
   onSkip: (s: number) => void;
   onProgressChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onProgressChangeEnd: () => void;
-  somDeFundo: string;
-  onSomDeFundo: () => void;
+  onProgressChangeEnd?: () => void;
+  /** sem som de fundo (ex.: o player de sons), a linha some */
+  somDeFundo?: string;
+  onSomDeFundo?: () => void;
   isFavorite: boolean;
   onFavorite?: () => void;
   volume: number;
@@ -57,6 +58,8 @@ export default function ReinoPlayer({
   onVolume,
 }: ReinoPlayerProps) {
   const frac = duration > 0 ? currentTime / duration : 0;
+  // capa pode ser um caminho de imagem ou um fundo CSS (url(...) / gradiente)
+  const capaCss = /^(url\(|linear-gradient|radial-gradient)/.test(imagem);
 
   return (
     <div className="reino-corpo reino-player">
@@ -81,7 +84,11 @@ export default function ReinoPlayer({
 
       <div className="reino-player__centro">
         <div className="reino-player__arte reino-rasgo-a">
-          <img src={imagem} alt="" decoding="async" />
+          {capaCss ? (
+            <span className="reino-player__arte-css" style={{ background: imagem, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          ) : (
+            <img src={imagem} alt="" decoding="async" />
+          )}
         </div>
 
         <div className="reino-player__titulos">
@@ -138,10 +145,14 @@ export default function ReinoPlayer({
         </div>
 
         <div className="reino-player__rodape">
-          <button type="button" className="reino-player__som" onClick={onSomDeFundo}>
-            <span className="reino-player__som-rotulo">Som de fundo</span>
-            <span className="reino-player__som-nome">{somDeFundo}</span>
-          </button>
+          {onSomDeFundo ? (
+            <button type="button" className="reino-player__som" onClick={onSomDeFundo}>
+              <span className="reino-player__som-rotulo">Som de fundo</span>
+              <span className="reino-player__som-nome">{somDeFundo}</span>
+            </button>
+          ) : (
+            <span />
+          )}
           <label className="reino-player__volume">
             <span className="reino-player__som-rotulo">Voz</span>
             <input
