@@ -83,8 +83,9 @@ export default function TermosPage() {
           </li>
           <li>A assinatura renova automaticamente ao fim de cada período (mês ou ano) até ser cancelada.</li>
           <li>
-            Você pode cancelar quando quiser, pela <Link to="/cancelar-assinatura">página de cancelamento</Link> ou pelo
-            e-mail <Contato />. O acesso continua até o fim do período já pago.
+            Você pode cancelar quando quiser, no app (Configurações, Assinatura) ou pelo e-mail <Contato />. O passo a
+            passo está na <Link to="/cancelar-assinatura">página de cancelamento</Link>. O acesso continua até o fim do
+            período já pago.
           </li>
           <li>Os pagamentos são processados pelo Mercado Pago. Os dados do cartão não ficam guardados no Ecotopia.</li>
         </ul>

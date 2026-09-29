@@ -747,3 +747,22 @@
   padding-left: 16px;
   padding-right: 16px;
 }
+.reino-corpo .reino-artigo ol.rl-legal__passos {
+  margin: 0;
+  padding-left: 22px;
+  list-style: decimal;
+  display: grid;
+  gap: 8px;
+}
+.reino-corpo .reino-artigo ol.rl-legal__passos li {
+  display: list-item;
+  font: 400 17px/1.7 var(--r-ui);
+  color: var(--r-fg);
+}
+.reino-corpo .reino-artigo ol.rl-legal__passos li::before {
+  content: none;
+}
+.reino-corpo .reino-artigo ol.rl-legal__passos li::marker {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  color: var(--r-rosa);
+}
