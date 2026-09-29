@@ -248,15 +248,7 @@ export const processChunk = ({
 
       const normalizedFallback = typeof fallbackText === "string" ? fallbackText.trim() : "";
       if (normalizedFallback) {
-        const hasAlertFlag =
-          (rawEvent as { error?: unknown }).error === true ||
-          (rawEvent as { warn?: unknown }).warn === true ||
-          (rawEvent as { warning?: unknown }).warning === true ||
-          (payloadRecord as { error?: unknown })?.error === true ||
-          (payloadRecord as { warn?: unknown })?.warn === true ||
-          (payloadRecord as { warning?: unknown })?.warning === true;
-
-        effectiveDelta = hasAlertFlag ? `⚠️ ${normalizedFallback}` : normalizedFallback;
+        effectiveDelta = normalizedFallback;
         trimmedDelta = effectiveDelta.trim();
       }
     }
@@ -924,7 +916,7 @@ export const onError = ({
       const nextIndex =
         typeof currentEntry?.chunkIndexMax === "number" ? currentEntry.chunkIndexMax + 1 : 0;
 
-      const messageText = "⚠️ Ocorreu um erro interno. Tente novamente.";
+      const messageText = "Algo falhou do nosso lado. Tente de novo.";
 
       const syntheticEvent: Record<string, unknown> = {
         ...rawEvent,

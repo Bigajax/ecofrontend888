@@ -2,7 +2,7 @@ export const isDev = Boolean((import.meta as any)?.env?.DEV);
 export const isTestEnv = Boolean((import.meta as any)?.env?.MODE === 'test');
 
 export const CONTEXT_FETCH_TIMEOUT_MS = 3000;
-export const NO_TEXT_WARNING = '⚠️ Nenhum texto recebido do servidor.';
+export const NO_TEXT_WARNING = 'A Eco não conseguiu responder agora. Tente de novo.';
 export const NO_TEXT_ALERT_MESSAGE = 'Nenhum texto recebido do servidor. Tente novamente.';
 
 export const getNow = () =>

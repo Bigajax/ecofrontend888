@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Circle, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import mixpanel from '@/lib/mixpanel';
+import '@/components/reino/reino.css';
 
 interface TrialTask {
   id: string;
@@ -18,29 +17,29 @@ const TRIAL_TASKS: Omit<TrialTask, 'completed'>[] = [
   {
     id: 'explore_meditations',
     day: 1,
-    title: 'Explore meditações premium',
-    description: 'Ouça uma meditação de 15+ minutos',
+    title: 'Ouça uma meditação longa',
+    description: 'Uma das trilhas, de quinze minutos ou mais.',
     action: '/app/programas',
   },
   {
     id: 'complete_rings',
     day: 2,
-    title: 'Complete os 5 Anéis',
-    description: 'Pratique ritual completo diariamente',
+    title: 'Faça um dia dos Cinco Anéis',
+    description: 'Duas perguntas, poucos minutos.',
     action: '/app/rings',
   },
   {
     id: 'unlimited_chat',
     day: 3,
-    title: 'Converse ilimitadamente com Eco',
-    description: 'Sem limites durante seu trial',
-    action: '/app',
+    title: 'Converse com a Eco sem limite',
+    description: 'Nestes dias, a conversa não tem teto.',
+    action: '/app/chat',
   },
   {
     id: 'memory_insights',
     day: 4,
-    title: 'Veja insights do seu perfil emocional',
-    description: 'Análises avançadas disponíveis',
+    title: 'Veja o seu perfil emocional',
+    description: 'O que a Eco já percebeu das suas conversas.',
     action: '/app/memory',
   },
 ];
@@ -123,68 +122,35 @@ export default function TrialOnboarding() {
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
 
+  // No reino (set/2026): a lista numerada das trilhas, com o dia feito marcado.
+  // Antes: cartão em gradiente, ícone de brilho e aviso com emoji de relógio.
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        className="bg-gradient-to-br from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-2xl p-4 sm:p-6 mt-4 md:mt-0 mb-4 sm:mb-6"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-eco-primary" />
-            <h3 className="font-semibold text-base sm:text-lg">
-              Seu Trial Premium ({trialDaysRemaining} {trialDaysRemaining === 1 ? 'dia' : 'dias'} restantes)
-            </h3>
-          </div>
-          <span className="text-xs sm:text-sm text-eco-muted">
-            {completedCount}/{totalCount}
-          </span>
-        </div>
-
-        <div className="space-y-3">
-          {tasks.map((task) => (
+    <section className="reino-teste" aria-labelledby="reino-teste-titulo">
+      <p className="reino-rotulo" id="reino-teste-titulo">
+        Seus dias com tudo aberto · {trialDaysRemaining === 1 ? 'falta 1 dia' : `faltam ${trialDaysRemaining} dias`}
+      </p>
+      <p className="reino-teste__sub">
+        {completedCount} de {totalCount} feitos. Quatro coisas para conhecer o que a assinatura abre.
+      </p>
+      <ol className="reino-sumario reino-sessoes">
+        {tasks.map((task, i) => (
+          <li key={task.id} className={task.completed ? 'is-feita' : undefined}>
             <button
-              key={task.id}
+              type="button"
+              className="reino-sessao"
               onClick={() => handleTaskClick(task)}
               disabled={task.completed}
-              className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all text-left ${
-                task.completed
-                  ? 'bg-green-50 border border-green-200 cursor-default'
-                  : 'bg-white border border-eco-line hover:border-eco-primary hover:shadow-md active:scale-[0.99]'
-              }`}
             >
-              <div className="flex-shrink-0 mt-0.5">
-                {task.completed ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                ) : (
-                  <Circle className="w-5 h-5 text-eco-muted" />
-                )}
-              </div>
-
-              <div className="flex-1">
-                <p className="font-medium text-sm sm:text-base">{task.title}</p>
-                <p className="text-xs sm:text-sm text-eco-muted mt-0.5">{task.description}</p>
-              </div>
-
-              {!task.completed && (
-                <span className="text-xs sm:text-sm text-eco-primary font-semibold shrink-0">
-                  Fazer →
-                </span>
-              )}
+              <span className="reino-sumario__n">{task.completed ? '✓' : String(i + 1).padStart(2, '0')}</span>
+              <span className="reino-sessao__texto">
+                <span className="reino-sumario__t">{task.title}</span>
+                <span className="reino-sessao__descricao">{task.description}</span>
+              </span>
+              <span className="reino-sumario__m">{task.completed ? 'feito' : 'fazer'}</span>
             </button>
-          ))}
-        </div>
-
-        {trialDaysRemaining <= 2 && (
-          <div className="mt-4 p-3 bg-eco-warn/10 border border-eco-warn/30 rounded-xl">
-            <p className="text-xs sm:text-sm text-eco-warn text-center font-medium">
-              ⏰ Seu trial termina em {trialDaysRemaining} {trialDaysRemaining === 1 ? 'dia' : 'dias'}. Aproveite ao máximo!
-            </p>
-          </div>
-        )}
-      </motion.div>
-    </AnimatePresence>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

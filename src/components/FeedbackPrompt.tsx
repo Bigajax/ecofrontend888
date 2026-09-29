@@ -137,50 +137,48 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
     }
   }
 
+  // No reino (set/2026): uma linha discreta sob a resposta, com palavras no
+  // lugar de emoji e os motivos como filtros sublinhados. Antes: caixa de vidro
+  // branca com 👍 👎 e botão vermelho.
   if (mode === "done") {
     return (
-      <div className="mx-auto my-3 rounded-xl bg-white/70 p-3 text-sm text-gray-700">
-        Obrigado pelo feedback 💛
-      </div>
+      <p className="reino-avaliar reino-avaliar--feito" role="status">
+        Obrigado. Isso ajuda a Eco a responder melhor.
+      </p>
     );
   }
 
   if (mode === "reasons") {
     return (
-      <div className="mx-auto my-3 rounded-xl bg-white/70 p-3">
-        <p className="mb-2 text-sm text-gray-700">O que não ajudou?</p>
-        <div className="flex flex-wrap gap-2">
+      <div className="reino-avaliar">
+        <p className="reino-avaliar__pergunta">O que não ajudou?</p>
+        <div className="reino-filtros" role="group" aria-label="Motivo">
           {REASONS.map((reason) => (
             <button
               key={reason.key}
+              type="button"
               disabled={loading}
+              className="reino-filtro"
+              aria-pressed={selected === reason.key}
               onClick={() => {
                 setSelected(reason.key);
                 setError(null);
               }}
-              className={`rounded-full border px-3 py-1 text-sm hover:bg-gray-50 ${
-                selected === reason.key ? "bg-gray-100" : ""
-              }`}
             >
               {reason.label}
             </button>
           ))}
         </div>
-        {error && <div className="mt-2 text-xs text-red-500">{error}</div>}
-        <div className="mt-3 flex items-center justify-between">
+        {error && (
+          <p className="reino-avaliar__erro" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="reino-avaliar__acoes">
           <button
-            disabled={loading}
-            onClick={() => {
-              setSelected(null);
-              setError(null);
-              setMode("ask");
-            }}
-            className="text-xs text-gray-500 hover:underline"
-          >
-            Cancelar
-          </button>
-          <button
+            type="button"
             disabled={loading || !selected}
+            className="reino-avaliar__enviar"
             onClick={async () => {
               if (!selected) return;
               const reasons = [selected];
@@ -188,12 +186,23 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
               trackFeedbackEvent("FE: Feedback Prompt Click", payload);
               const success = await send("down", reasons);
               if (!success) {
-                setError("Falha ao enviar feedback");
+                setError("Não foi possível enviar agora. Tente de novo.");
               }
             }}
-            className="rounded-md bg-red-500 px-3 py-1 text-white disabled:opacity-50"
           >
             {loading ? "Enviando..." : "Enviar"}
+          </button>
+          <button
+            type="button"
+            disabled={loading}
+            className="reino-avaliar__voltar"
+            onClick={() => {
+              setSelected(null);
+              setError(null);
+              setMode("ask");
+            }}
+          >
+            Cancelar
           </button>
         </div>
       </div>
@@ -201,11 +210,14 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
   }
 
   return (
-    <div className="mx-auto my-3 flex items-center justify-between rounded-xl bg-white/70 p-3">
-      <span className="text-sm text-gray-700">Essa resposta ajudou?</span>
-      <div className="flex gap-2">
+    <div className="reino-avaliar reino-avaliar--linha">
+      <span className="reino-avaliar__pergunta">Essa resposta ajudou?</span>
+      <div className="reino-avaliar__votos">
         <button
+          type="button"
           disabled={loading}
+          className="reino-avaliar__voto"
+          aria-pressed={activeVote === "up"}
           onClick={() => {
             // Toggle: se já está ativo, desativa
             if (activeVote === "up") {
@@ -216,16 +228,14 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
             trackFeedbackEvent("FE: Feedback Prompt Click", payload);
             void send("up");
           }}
-          className={`rounded-full border px-3 py-1 text-sm transition-all duration-200 ${
-            activeVote === "up"
-              ? "border-eco-baby bg-eco-babySoft"
-              : "border-eco-line bg-transparent hover:border-eco-baby/60"
-          }`}
         >
-          👍
+          Ajudou
         </button>
         <button
+          type="button"
           disabled={loading}
+          className="reino-avaliar__voto"
+          aria-pressed={activeVote === "down"}
           onClick={() => {
             // Toggle: se já está ativo, desativa
             if (activeVote === "down") {
@@ -238,13 +248,8 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
             setError(null);
             setMode("reasons");
           }}
-          className={`rounded-full border px-3 py-1 text-sm transition-all duration-200 ${
-            activeVote === "down"
-              ? "border-eco-baby bg-eco-babySoft"
-              : "border-eco-line bg-transparent hover:border-eco-baby/60"
-          }`}
         >
-          👎
+          Não ajudou
         </button>
       </div>
     </div>

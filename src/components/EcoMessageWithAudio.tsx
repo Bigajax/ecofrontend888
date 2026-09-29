@@ -410,7 +410,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
           statusLabel = status ? ` (${status})` : "";
           const message = (error.message ?? "").toLowerCase();
           if (status === 404 || message.includes("interaction_not_found")) {
-            friendly = "A conversa atualizou — tente na próxima resposta";
+            friendly = "A conversa atualizou. Tente na próxima resposta.";
           }
         }
 

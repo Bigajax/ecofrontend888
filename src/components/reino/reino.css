@@ -4566,3 +4566,112 @@
 .reino-pagina > .reino-filtros {
   margin-bottom: 26px;
 }
+
+/* ── Chat: aviso de erro, avaliar a resposta e os dias de teste (set/2026) ── */
+.reino-aviso {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  margin: 22px auto 0;
+  max-width: 640px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--r-ocre);
+  background: rgba(237, 184, 90, 0.12);
+  color: var(--r-anil);
+  font: 400 14.5px/1.5 var(--r-ui);
+}
+.reino-aviso__acao {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 600 14px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+  cursor: pointer;
+}
+.reino-aviso__acao:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.reino-avaliar {
+  margin: 10px auto 14px;
+  max-width: 640px;
+  color: var(--r-anil);
+  font: 400 14px/1.5 var(--r-ui);
+}
+.reino-avaliar--linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 18px;
+}
+.reino-avaliar--feito {
+  color: #4b5070;
+}
+.reino-avaliar__pergunta {
+  margin: 0;
+  color: #4b5070;
+}
+.reino-avaliar .reino-filtros {
+  margin-top: 6px;
+}
+.reino-avaliar__votos {
+  display: flex;
+  gap: 16px;
+}
+.reino-avaliar__voto,
+.reino-avaliar__voltar {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--r-anil);
+  font: 500 14px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: rgba(28, 35, 80, 0.25);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+  cursor: pointer;
+}
+.reino-avaliar__voto[aria-pressed='true'],
+.reino-avaliar__voto:hover {
+  text-decoration-color: var(--r-ocre);
+}
+.reino-avaliar__acoes {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 12px;
+}
+.reino-avaliar__enviar {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 3px 6px 4px 7px;
+  background: var(--r-anil);
+  color: var(--r-papel);
+  font: 600 13.5px var(--r-ui);
+  cursor: pointer;
+}
+.reino-avaliar__enviar:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.reino-avaliar__erro {
+  margin: 8px 0 0;
+  color: #8a3b2a;
+  font-size: 13.5px;
+}
+.reino-teste {
+  margin: 18px 0 22px;
+  color: var(--r-anil);
+}
+.reino-teste__sub {
+  margin: 4px 0 6px;
+  color: #4b5070;
+  font: 400 14px/1.5 var(--r-ui);
+}
+.reino-teste .reino-sessao:disabled {
+  cursor: default;
+}

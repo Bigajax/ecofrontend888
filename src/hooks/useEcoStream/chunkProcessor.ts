@@ -260,7 +260,7 @@ export const processSseLine = (
 export function extractText(evt: any): string {
   if (!evt) return "";
   if (evt.error && typeof evt.message === "string" && evt.message.trim()) {
-    return `⚠️ ${evt.message}`;
+    return evt.message;
   }
   if (typeof evt.text === "string" && evt.text.trim()) {
     return evt.text;

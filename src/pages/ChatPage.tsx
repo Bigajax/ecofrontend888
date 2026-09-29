@@ -1004,16 +1004,16 @@ function ChatPage() {
                 )}
 
                 {erroApi && (
-                  <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border border-red-200/60 bg-red-50/50 backdrop-blur-sm px-4 py-3 text-center text-red-600">
-                    <span className="text-sm">{erroApi}</span>
+                  <div className="reino-aviso" role="alert">
+                    <span>{erroApi}</span>
                     {canRetry && (
                       <button
                         type="button"
                         onClick={handleRetry}
                         disabled={composerPending}
-                        className="text-sm font-medium text-red-700 underline underline-offset-2 transition hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="reino-aviso__acao"
                       >
-                        Tentar novamente
+                        Tentar de novo
                       </button>
                     )}
                   </div>
