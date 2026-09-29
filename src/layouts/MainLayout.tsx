@@ -21,6 +21,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return () => document.documentElement.classList.remove('reino-app');
   }, []);
 
+  // A cada troca de página: nenhuma trava de rolagem de outra tela pode sobrar.
+  // (O chat trava o documento com .eco-chat-lock/.keyboard-open; modais põem
+  // overflow hidden no body. Se algum não limpar ao sair, a página seguinte não rola.)
+  useEffect(() => {
+    if (!location.pathname.startsWith('/app/chat')) {
+      document.body.classList.remove('eco-chat-lock', 'keyboard-open');
+    }
+    document.body.style.overflow = '';
+  }, [location.pathname]);
+
   // Guest gate para controlar limite de mensagens
   const isGuest = !user;
   const guestGate = useGuestGate(isGuest);
@@ -93,8 +103,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {isHomePage || isChatPage || isMemoryPage || isVoicePage ? (
         children
       ) : (
+        // Sem overflow/overscroll próprios: quem rola é o #root. Com "scroll-touch"
+        // (overflow-y: scroll + overscroll-behavior: contain), qualquer elemento que
+        // passasse da borda transformava o <main> no alvo da roda do mouse, e o
+        // contain impedia a rolagem de chegar ao #root: a página travava.
         <main
-          className="scroll-touch"
           style={{
             minHeight: '100dvh',
             paddingTop: showOldHeader ? 'calc(56px + env(safe-area-inset-top))' : 'env(safe-area-inset-top)',
