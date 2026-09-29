@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import {
   GUEST_EXPERIENCE_CONFIG,
@@ -151,16 +151,30 @@ const saveStateToStorage = (state: GuestExperienceState) => {
  * Provider do sistema de Guest Experience
  */
 export function GuestExperienceProvider({ children }: { children: React.ReactNode }) {
-  const { user, isGuestMode, guestId } = useAuth();
+  const { user, isGuestMode } = useAuth();
 
-  // Se não é guest ou está logado, não faz nada
+  // Se não é guest ou está logado, não faz nada. A parte ativa é um componente
+  // separado (set/2026): antes os hooks vinham depois deste return, e o modo
+  // visitante ligando com a página aberta mudava o número de hooks do render.
   if (!GUEST_EXPERIENCE_CONFIG.ENABLED || !isGuestMode || user) {
     return <>{children}</>;
   }
+  return <GuestExperienceAtivo>{children}</GuestExperienceAtivo>;
+}
+
+function GuestExperienceAtivo({ children }: { children: React.ReactNode }) {
+  const { guestId } = useAuth();
 
   const [state, setState] = useState<GuestExperienceState>(() =>
     loadStateFromStorage(guestId)
   );
+  // Leitura do estado atual sem virar dependência: trackPageView e
+  // trackInteraction precisam de identidade estável. Antes, cada visita contada
+  // criava um trackPageView novo, o GuestExperienceTracker via a identidade
+  // nova e contava de novo: loop infinito de render, com um "Convidado · Page
+  // view" no Mixpanel a cada volta (set/2026).
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // Atualizar guestId quando mudar
   useEffect(() => {
@@ -209,16 +223,17 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
 
       // Enviar para Mixpanel
       if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
+        const atual = stateRef.current;
         mixpanel.track('Convidado · Page view', {
           page: path,
           guest_id: guestId,
-          total_time_ms: state.totalTimeMs,
-          page_views: state.pageViews + 1,
-          unique_pages: state.visitedPages.size,
+          total_time_ms: atual.totalTimeMs,
+          page_views: atual.pageViews + 1,
+          unique_pages: atual.visitedPages.size,
         });
       }
     },
-    [guestId, state.totalTimeMs, state.pageViews, state.visitedPages.size]
+    [guestId]
   );
 
   // Rastrear interação
@@ -234,17 +249,18 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
 
       // Enviar para Mixpanel
       if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
+        const atual = stateRef.current;
         mixpanel.track('Convidado · Interação', {
           type,
           ...metadata,
           guest_id: guestId,
-          total_time_ms: state.totalTimeMs,
-          interaction_count: state.interactionCount + 1,
-          page_views: state.pageViews,
+          total_time_ms: atual.totalTimeMs,
+          interaction_count: atual.interactionCount + 1,
+          page_views: atual.pageViews,
         });
       }
     },
-    [guestId, state.totalTimeMs, state.interactionCount, state.pageViews]
+    [guestId]
   );
 
   // Rastrear tempo adicional (se necessário)

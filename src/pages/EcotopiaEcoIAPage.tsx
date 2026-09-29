@@ -51,6 +51,7 @@ const ECO_IA: LandingConfig = {
   rotulo: 'Casa da Eco',
   titulo: 'Desabafe a qualquer hora.',
   sobre: 'A Eco escuta sem julgar e ajuda a organizar a cabeça.',
+  conversa: { texto: 'Conversar com a Eco agora', origem: 'eco_ia_conversa' },
   dentro: {
     titulo: 'Não é só desabafar. É sair melhor.',
     itens: [

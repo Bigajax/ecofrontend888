@@ -67,19 +67,19 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
   // CHAT CONTEXTS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   chat_soft_prompt: {
-    title: 'Eco está começando a conhecer você melhor',
-    message: 'Crie sua conta para que ela se lembre desta conversa amanhã.',
+    title: 'A Eco está começando a conhecer você',
+    message: 'Crie a conta para ela lembrar desta conversa amanhã.',
     primaryCta: 'Criar minha conta',
-    secondaryCta: 'Continuar como convidado',
-    subtitle: 'Sempre gratuito, sempre privado',
+    secondaryCta: 'Continuar conversando',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   chat_hard_limit: {
     title: 'Esta conversa merece continuar',
-    message: 'Crie sua conta para que Eco guarde sua história e continue este diálogo amanhã.',
-    primaryCta: 'Criar minha conta',
-    subtitle: 'Sempre gratuito, sempre privado',
-    legalText: 'Sem spam. Você pode sair quando quiser.',
+    message: 'Crie a conta para seguir de onde parou. A Eco guarda o que vocês conversaram.',
+    primaryCta: 'Continuar com a Eco',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
+    legalText: 'Cancele quando quiser.',
   },
 
   chat_vulnerability: {
@@ -87,7 +87,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Este espaço pode ser seu refúgio permanente. Crie sua conta para que Eco se lembre desta conexão.',
     primaryCta: 'Tornar este espaço meu',
     secondaryCta: 'Agora não',
-    subtitle: 'Privado, seguro, sempre gratuito',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   chat_deep_engagement: {
@@ -95,7 +95,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Conversas profundas merecem um espaço permanente. Crie sua conta para continuar esta jornada.',
     primaryCta: 'Continuar esta jornada',
     secondaryCta: 'Talvez depois',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -106,7 +106,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Crie sua conta para ler a análise completa e guardar suas reflexões favoritas.',
     primaryCta: 'Continuar esta reflexão',
     secondaryCta: 'Voltar à lista',
-    subtitle: 'Crie sua conta em 30 segundos — sempre gratuito',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   reflection_multiple: {
@@ -114,7 +114,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Três reflexões. Este é o ritmo de uma prática diária. Crie seu espaço para continuar este hábito.',
     primaryCta: 'Criar meu espaço',
     secondaryCta: 'Continuar explorando',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   reflection_deep_scroll: {
@@ -122,7 +122,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Suas reflexões favoritas merecem um lugar permanente. Crie sua conta para guardá-las.',
     primaryCta: 'Salvar minhas reflexões',
     secondaryCta: 'Agora não',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -133,7 +133,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Continue esta meditação completa criando sua conta. As práticas completas aguardam você.',
     primaryCta: 'Continuar meditando',
     secondaryCta: 'Voltar à biblioteca',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   meditation_complete: {
@@ -149,7 +149,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Suas práticas favoritas estarão sempre aqui quando você precisar. Crie sua conta para salvá-las.',
     primaryCta: 'Salvar minhas favoritas',
     secondaryCta: 'Agora não',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -160,7 +160,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: '29 dias de prática ancestral aguardam você. Crie sua conta para continuar esta transformação de 30 dias.',
     primaryCta: 'Continuar minha jornada',
     secondaryCta: 'Agora não',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   rings_gate: {
@@ -168,7 +168,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Você completou os primeiros dois anéis. Crie sua conta para atravessar os próximos 28 dias de transformação.',
     primaryCta: 'Atravessar os anéis',
     secondaryCta: 'Voltar',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -190,7 +190,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Você já retornou algumas vezes. Torne este espaço permanentemente seu.',
     primaryCta: 'Criar minha conta',
     secondaryCta: 'Continuar explorando',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   voice_usage: {
@@ -198,15 +198,15 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Crie sua conta para que Eco se lembre das suas conversas de voz e continue esta conexão.',
     primaryCta: 'Continuar com voz',
     secondaryCta: 'Agora não',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   favorite_attempt: {
     title: 'Salve este momento',
-    message: 'Seus favoritos estarão sempre aqui com uma conta gratuita. Crie seu espaço permanente.',
+    message: 'Seus favoritos estarão sempre aqui com uma conta. Crie seu espaço permanente.',
     primaryCta: 'Salvar meus favoritos',
     secondaryCta: 'Continuar sem salvar',
-    subtitle: 'Sempre gratuito, sempre privado',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
   },
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -217,7 +217,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   chat_daily_limit: {
     title: 'Você atingiu seu limite diário',
-    message: 'Você teve 5 conversas profundas hoje. Amanhã, mais 5 te aguardam — ou desbloqueie conversas ilimitadas agora.',
+    message: 'Você teve 5 conversas profundas hoje. Amanhã, mais 5 te aguardam, ou desbloqueie conversas ilimitadas agora.',
     primaryCta: 'Desbloquear conversas ilimitadas',
     secondaryCta: 'Voltar amanhã',
     subtitle: OFFER.trialCancel,
@@ -241,7 +241,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
 
   reflection_month_fevereiro: {
     title: 'PAIXÕES E EMOÇÕES',
-    message: '"As paixões são tiranas. Aprenda a dominá-las." — Marco Aurélio. 28 reflexões que vão transformar sua relação com as emoções.',
+    message: '"As paixões são tiranas. Aprenda a dominá-las." (Marco Aurélio). 28 reflexões que vão transformar sua relação com as emoções.',
     primaryCta: 'Desbloquear Fevereiro (28 reflexões)',
     secondaryCta: 'Continuar com Janeiro',
     subtitle: OFFER.trialCancel,
@@ -254,7 +254,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
 
   reflection_month_dezembro: {
     title: 'MEDITAÇÃO SOBRE MORTALIDADE',
-    message: '"Você pode deixar a vida agora. Que isso determine o que você faz, diz e pensa." — Marco Aurélio. 20 reflexões profundas sobre finitude, propósito e legado.',
+    message: '"Você pode deixar a vida agora. Que isso determine o que você faz, diz e pensa." (Marco Aurélio). 20 reflexões profundas sobre finitude, propósito e legado.',
     primaryCta: 'Desbloquear Dezembro (20 reflexões)',
     secondaryCta: 'Continuar com Janeiro',
     subtitle: OFFER.trialCancel,
@@ -267,7 +267,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
 
   rings_weekly_limit: {
     title: 'Ritual semanal concluído',
-    message: 'Você completou seu ritual desta semana. Premium desbloqueia prática diária — 30 dias de transformação ininterrupta.',
+    message: 'Você completou seu ritual desta semana. Premium desbloqueia prática diária: 30 dias de transformação ininterrupta.',
     primaryCta: 'Desbloquear prática diária',
     secondaryCta: 'Voltar',
     subtitle: `${OFFER.trial} para experimentar`,
@@ -342,11 +342,11 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
 
   generic: {
     title: 'Continue sua jornada',
-    message: 'Crie sua conta gratuita para salvar seu progresso e desbloquear a experiência completa do ECOTOPIA.',
+    message: 'Crie sua conta para salvar seu progresso e desbloquear a experiência completa do ECOTOPIA.',
     primaryCta: 'Criar minha conta',
     secondaryCta: 'Agora não',
-    subtitle: 'Sempre gratuito, sempre privado',
-    legalText: 'Sem spam. Você pode sair quando quiser.',
+    subtitle: 'Sete dias com tudo aberto. Nada é cobrado hoje.',
+    legalText: 'Cancele quando quiser.',
   },
 };
 

@@ -766,3 +766,11 @@
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   color: var(--r-rosa);
 }
+
+/* Os atalhos viram botão quando a landing abre a conversa (conversa primeiro) */
+button.rl-topo__cta,
+button.rl-barra__cta {
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}

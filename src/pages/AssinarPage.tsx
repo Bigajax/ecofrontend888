@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, migrateGuestData } from "@/contexts/AuthContext";
 import { apiUrl } from "@/config/apiBase";
 import { supabase } from "@/lib/supabaseClient";
 import { SignupStep } from "@/components/assinar/SignupStep";
@@ -8,7 +8,7 @@ import { MpCardForm } from "@/components/assinar/MpCardForm";
 import { GoalsStep } from "@/components/assinar/GoalsStep";
 import { ValidationStep } from "@/components/assinar/ValidationStep";
 import { LegalFooter } from "@/components/assinar/LegalFooter";
-import { PlanoReino, CartaoReino, CadastroReino } from "@/components/assinar/AssinarReino";
+import { CartaoReino, CadastroReino } from "@/components/assinar/AssinarReino";
 import type { PlanId } from "@/components/assinar/types";
 import type { GoalId } from "@/components/assinar/goalsData";
 import { saveObjetivos, linkUserToObjetivos } from "@/api/onboardingObjetivos";
@@ -212,6 +212,13 @@ export default function AssinarPage() {
     let cancelled = false;
     setVerificandoConta(true);
     (async () => {
+      // Quem conversou como visitante (ex.: /eco-ia) leva a conversa para a conta
+      // nova. Sem dados de visitante, não faz nada; falha nunca trava o funil.
+      try {
+        await migrateGuestData(user.id);
+      } catch {
+        // segue sem migrar
+      }
       let premium = false;
       try {
         premium = (await getSubscriptionStatus()).isPremium;
@@ -260,6 +267,15 @@ export default function AssinarPage() {
     trackPlanoConfirmado({ plan_id: plan, is_authenticated: !!user });
     setStep(user ? "card" : "signup");
   };
+
+  // O plano deixou de ser uma tela (set/2026): quem entra por ?step=plan segue
+  // direto para a conta (ou para o cartão, se já está logado), onde o plano é
+  // escolhido. "Plano visto" e "Plano confirmado" continuam saindo aqui para os
+  // funis do Mixpanel não perderem a primeira etapa.
+  useEffect(() => {
+    if (step === "plan" && !authLoading) continueFromPlan();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, authLoading]);
 
   // useCallback com identidade estável (só muda com o plano): evita que o brick do
   // MercadoPago seja recriado a cada re-render da página (ver React.memo em MpCardForm).
@@ -332,6 +348,9 @@ export default function AssinarPage() {
     </p>
   ) : (
     <MpCardForm
+      // Trocar de plano aqui é uma remontagem limpa (o valor muda), nunca o
+      // brick se recriando sozinho num re-render.
+      key={plan}
       amount={plan === "monthly" ? 15.9 : 142.8}
       maxInstallments={1}
       payerEmail={user?.email ?? ""}
@@ -342,30 +361,24 @@ export default function AssinarPage() {
     />
   );
 
-  // Plano, cadastro e cartão no reino, para quem vem do app e para quem vem das
-  // landings. O "voltar" do plano leva de volta para onde a pessoa estava.
-  if (step === "plan") {
-    const destino = user ? "/app" : backTo;
+  // Duas telas no reino: a conta, depois plano + cartão juntos. O "voltar" leva
+  // para onde a pessoa estava (a landing de origem, ou o app).
+  const destinoVoltar = user ? "/app" : backTo;
+  const voltar = () => {
+    trackFunilAbandonado({ step, destino: destinoVoltar });
+    marcarSaidaIntencionalDoFunil();
+    navigate(destinoVoltar);
+  };
+  const voltarRotulo = user ? "Voltar ao reino" : "Voltar";
+
+  if (step === "plan" || step === "signup") {
+    // "plan" é só passagem (links antigos e as landings entram por ele); o
+    // redirecionamento acontece no efeito acima, depois da sessão resolver.
     return (
-      <PlanoReino
-        plan={plan}
-        onSelectPlan={selectPlan}
-        onContinue={continueFromPlan}
-        voltarRotulo={user ? "Voltar ao reino" : "Voltar"}
-        onVoltar={() => {
-          trackFunilAbandonado({ step, destino });
-          marcarSaidaIntencionalDoFunil();
-          navigate(destino);
-        }}
-      />
-    );
-  }
-  if (step === "signup") {
-    return (
-      <CadastroReino onVoltar={() => setStep("plan")}>
-        {verificandoConta ? (
+      <CadastroReino onVoltar={voltar} voltarRotulo={voltarRotulo}>
+        {step === "plan" || verificandoConta ? (
           <p aria-live="polite" className="reino-assinar__miudo">
-            Verificando sua conta…
+            {step === "plan" ? "Abrindo…" : "Verificando sua conta…"}
           </p>
         ) : (
           <SignupStep onCreated={() => setStep("card")} funnelReturnTo={funnelReturnTo} loginReturnTo={loginReturnTo} />
@@ -377,7 +390,9 @@ export default function AssinarPage() {
     return (
       <CartaoReino
         plan={plan}
-        onTrocarPlano={() => setStep("plan")}
+        onSelectPlan={selectPlan}
+        onVoltar={voltar}
+        voltarRotulo={voltarRotulo}
         formulario={formularioCartao}
         processando={processing}
         erro={erro}

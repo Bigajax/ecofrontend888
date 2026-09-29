@@ -33,7 +33,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   // Guest gate para controlar limite de mensagens
   const isGuest = !user;
-  const guestGate = useGuestGate(isGuest);
+  // O 1º argumento é "está logado" (set/2026: passava isGuest, e o hook tratava
+  // todo visitante como logado, apagando o contador de mensagens a cada montagem).
+  const guestGate = useGuestGate(Boolean(user), isGuestMode);
 
   const pageTitle =
     location.pathname.startsWith('/app/memory') ? 'Memórias' :

@@ -55,23 +55,34 @@ beforeEach(() => {
 // ── Existing tests (updated to use ?step=plan explicitly, intent unchanged) ──
 
 describe("AssinarPage", () => {
-  it("starts on the plan step (monthly) with the $0-today timeline and trial CTA", () => {
+  // Duas telas (set/2026): ?step=plan é só passagem. Visitante vai para a conta;
+  // logado vai para plano + cartão.
+  it("?step=plan leva o visitante direto para a conta", async () => {
     renderAt("/assinar?step=plan");
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /crie a sua conta/i })).toBeInTheDocument();
+    });
     expect(screen.getAllByText(/nada é cobrado hoje/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /começar os 7 dias/i })).toBeInTheDocument();
   });
 
-  it("reads ?plan=annual and shows the annual timeline + annual CTA", () => {
+  it("?plan=annual chega ao cartão com o anual marcado e o valor do ano", async () => {
+    authState.user = { id: "user-123" };
     renderAt("/assinar?plan=annual&step=plan");
+    await waitFor(() => {
+      expect(screen.getByRole("radio", { name: /anual/i })).toHaveAttribute("aria-checked", "true");
+    });
     expect(screen.getAllByText(/R\$ 142,80/).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /começar os 7 dias/i })).toBeInTheDocument();
   });
 
-  it("advances to the signup step when the trial CTA is clicked (logged out)", () => {
-    renderAt("/assinar?step=plan");
-    fireEvent.click(screen.getByRole("button", { name: /começar os 7 dias/i }));
-    expect(screen.getByRole("heading", { name: /crie a sua conta/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /continuar com google/i })).toBeInTheDocument();
+  it("no cartão, dá para trocar o plano sem sair da tela", async () => {
+    authState.user = { id: "user-123" };
+    renderAt("/assinar?plan=monthly&step=card");
+    await waitFor(() => {
+      expect(screen.getByRole("radio", { name: /mensal/i })).toHaveAttribute("aria-checked", "true");
+    });
+    fireEvent.click(screen.getByRole("radio", { name: /anual/i }));
+    expect(screen.getByRole("radio", { name: /anual/i })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText("brick")).toBeInTheDocument();
   });
 
   // Regressão: ao concluir o signup o userId muda e o RootProviders remonta a árvore,
@@ -81,7 +92,7 @@ describe("AssinarPage", () => {
     authState.user = { id: "user-123" };
     renderAt("/assinar?step=signup");
     await waitFor(() => {
-      expect(screen.getByText(/confirme seu teste/i)).toBeInTheDocument();
+      expect(screen.getByText(/abra todas as portas/i)).toBeInTheDocument();
     });
   });
 
@@ -94,7 +105,7 @@ describe("AssinarPage", () => {
     await waitFor(() => {
       expect(navigate).toHaveBeenCalledWith("/app", { replace: true });
     });
-    expect(screen.queryByText(/confirme seu teste/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/abra todas as portas/i)).not.toBeInTheDocument();
   });
 });
 
@@ -109,7 +120,7 @@ describe("AssinarPage onboarding flow", () => {
   test("?step=card mantém shortcut do OAuth return", async () => {
     renderAt("/assinar?plan=monthly&step=card");
     await waitFor(() => {
-      expect(screen.getByText(/confirme seu teste/i)).toBeInTheDocument();
+      expect(screen.getByText(/abra todas as portas/i)).toBeInTheDocument();
     });
   });
 
@@ -122,19 +133,19 @@ describe("AssinarPage onboarding flow", () => {
     });
   });
 
-  test("goals.Pular → plan (pula a tela de validação)", async () => {
+  test("goals.Pular → conta (pula a tela de validação)", async () => {
     renderAt("/assinar?plan=monthly");
     fireEvent.click(screen.getByRole("button", { name: /^Pular$/i }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /começar os 7 dias/i })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /crie a sua conta/i })).toBeInTheDocument();
     });
   });
 
-  test("validation.Experimente → plan", async () => {
+  test("validation.Experimente → conta", async () => {
     renderAt("/assinar?plan=monthly&step=validation");
     fireEvent.click(screen.getByRole("button", { name: /Experimente por \$0/i }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /começar os 7 dias/i })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /crie a sua conta/i })).toBeInTheDocument();
     });
   });
 
@@ -171,19 +182,21 @@ describe("AssinarPage onboarding flow", () => {
   });
 });
 
-describe("AssinarPage · visual do reino (quem vem de dentro do app)", () => {
-  it("logado entrando pelo plano vê o reino, e o CTA leva direto ao cartão", () => {
+describe("AssinarPage · visual do reino", () => {
+  it("logado entrando pelo plano vai direto para plano + cartão", async () => {
     authState.user = { id: "user-123" };
     renderAt("/assinar?step=plan&from=upgrade_modal");
-    expect(screen.getByRole("heading", { name: /abra todas as portas/i })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /começar os 7 dias/i }));
-    expect(screen.getByRole("heading", { name: /confirme seu teste/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /abra todas as portas/i })).toBeInTheDocument();
+    });
     expect(screen.getByText("brick")).toBeInTheDocument();
   });
 
-  it("visitante vindo de uma landing também vê o reino, e o voltar leva à landing", () => {
+  it("visitante vindo de uma landing vê a conta, e o voltar leva à landing", async () => {
     renderAt("/assinar?step=plan&from=eco_ia_hero");
-    expect(screen.getByRole("heading", { name: /abra todas as portas/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /crie a sua conta/i })).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByRole("button", { name: /^voltar$/i }));
     expect(navigate).toHaveBeenCalledWith("/");
   });

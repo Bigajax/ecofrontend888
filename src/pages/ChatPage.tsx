@@ -89,6 +89,24 @@ type BehaviorHintMetrics = {
   fast_followup: number;
 };
 
+// Convite suave dispensado nesta sessão (sessionStorage): não volta a abrir
+// sozinho; o limite de 10 mensagens continua valendo.
+const CONVITE_SUAVE_KEY = 'eco.guest.convite-suave-dispensado';
+function conviteSuaveDispensado(): boolean {
+  try {
+    return sessionStorage.getItem(CONVITE_SUAVE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function marcarConviteSuaveDispensado() {
+  try {
+    sessionStorage.setItem(CONVITE_SUAVE_KEY, '1');
+  } catch {
+    // sem sessionStorage: o convite pode voltar, mas segue dispensável
+  }
+}
+
 function ChatPage() {
   const { messages, upsertMessage, setMessages, clearMessages } = useChat();
 
@@ -112,7 +130,8 @@ function ChatPage() {
   // Use explicit guest mode flag instead of implicit !user check
   // VIP users bypass all guest gates
   const isGuest = isGuestMode && !user && !isVipUser;
-  const guestGate = useGuestGate(!user, isGuestMode);
+  // O 1º argumento é "está logado" (antes: !user, que marcava o visitante como logado).
+  const guestGate = useGuestGate(Boolean(user), isGuestMode);
   const isPremium = useIsPremium();
   const freeLimits = useFreeTierLimits(); // Free tier message limits
   const [loginGateOpen, setLoginGateOpen] = useState(false);
@@ -254,8 +273,10 @@ function ChatPage() {
       setLoginGateContext('chat_hard_limit');
       setLoginGateOpen(true);
     }
-    // Soft prompt - mostrar modal dismissível
-    else if (guestGate.shouldShowSoftPrompt && !loginGateOpen) {
+    // Soft prompt - mostrar modal dismissível (uma vez por sessão: antes, ao
+    // fechar, este efeito via "fechado" e reabria na hora, e o convite suave
+    // virava bloqueio a partir da 6ª mensagem)
+    else if (guestGate.shouldShowSoftPrompt && !loginGateOpen && !conviteSuaveDispensado()) {
       setLoginGateContext('chat_soft_prompt');
       setLoginGateOpen(true);
     }
@@ -1122,7 +1143,10 @@ function ChatPage() {
 
             <LoginGateModal
               open={loginGateOpen}
-              onClose={() => setLoginGateOpen(false)}
+              onClose={() => {
+                if (loginGateContext === 'chat_soft_prompt') marcarConviteSuaveDispensado();
+                setLoginGateOpen(false);
+              }}
               onSignup={() => {
                 if (guestGate.guestId) {
                   mixpanel.track('Cadastro · CTA clicado', {
@@ -1131,7 +1155,15 @@ function ChatPage() {
                   });
                 }
                 setLoginGateOpen(false);
-                window.location.href = '/?returnTo=/app';
+                // Direto para a conta do funil (depois: plano + cartão). A origem vem
+                // da landing que abriu a conversa (ex.: /eco-ia), senão é o próprio convite.
+                let origem = 'chat_convite';
+                try {
+                  origem = sessionStorage.getItem('eco.funil.conversa') || origem;
+                } catch {
+                  // sem sessionStorage, segue com a origem padrão
+                }
+                navigate(`/assinar?step=signup&plan=monthly&from=${encodeURIComponent(origem)}`);
               }}
               count={guestGate.count}
               limit={guestGate.limit}

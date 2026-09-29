@@ -111,10 +111,11 @@ export function useGuestGate(isLogged: boolean, isGuestMode: boolean = false) {
       setCount(readInt(STORAGE.COUNT, 0));
       setInputDisabled(readBool(STORAGE.INPUT_DISABLED, false));
     } else {
-      // Not logged in and not in guest mode - clear everything
+      // Ainda sem modo visitante: só solta o guestId. O contador NÃO é zerado
+      // aqui: no primeiro render a sessão ainda não sabe que é visitante, e
+      // zerar gravava 0 no storage, fazendo o limite sumir a cada recarga
+      // (set/2026). Quem limpa o contador é o login, no ramo de cima.
       setGuestId(null);
-      setCount(0);
-      setInputDisabled(false);
     }
   }, [isLogged, isGuestMode]);
 

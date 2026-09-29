@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import ReinoChegada from '@/components/reino/ReinoChegada';
 import { Astro, ReinoScene, type ReinoCrop } from '@/components/reino/ReinoScene';
 import { getReinoMood, type ReinoMood } from '@/components/reino/reinoMood';
@@ -54,6 +55,12 @@ export interface LandingConfig {
   aviso?: ReactNode;
   faq: { p: string; r: ReactNode }[];
   fechamento: { titulo: string };
+  /**
+   * Conversa primeiro (set/2026): o botão principal abre a conversa com a Eco na
+   * hora, sem cadastro (modo visitante, 10 mensagens). O convite para a conta
+   * vem de dentro da conversa. O botão do preço segue indo para o /assinar.
+   */
+  conversa?: { texto: string; origem: string };
 }
 
 const REGIOES: { titulo: string; lugar: string; crop: ReinoCrop }[] = [
@@ -81,6 +88,8 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
   const [plano, setPlano] = useState<Plano>(config.plano ?? 'monthly');
   const chegadaRef = useRef<HTMLDivElement>(null);
   const [mostrarBarra, setMostrarBarra] = useState(false);
+  const navigate = useNavigate();
+  const { loginAsGuest } = useAuth();
 
   useEffect(() => {
     try {
@@ -103,12 +112,55 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
   const medir = (section: LandingSection, posicao: string, p: Plano = plano) =>
     trackLandingCta({ section, plan: p, from: `${config.from}_${posicao}` });
   const cta = config.cta ?? OFFER.ctaStartTrial;
+  const conversa = config.conversa;
+  const [abrindo, setAbrindo] = useState(false);
 
-  const Botao = ({ section, posicao, texto = cta }: { section: LandingSection; posicao: string; texto?: string }) => (
-    <Link to={href(posicao)} className="reino-placa" onClick={() => medir(section, posicao)}>
-      {texto} <span aria-hidden="true">→</span>
-    </Link>
-  );
+  // O chat é pesado: com a conversa primeiro, a landing já baixa o código dele
+  // em segundo plano. Sem isso, o clique segura a landing na tela enquanto o
+  // chat carrega e parece que o botão não respondeu.
+  useEffect(() => {
+    if (!conversa) return;
+    const t = window.setTimeout(() => {
+      void import('@/pages/ChatPage').catch(() => undefined);
+    }, 1200);
+    return () => window.clearTimeout(t);
+  }, [conversa]);
+
+  // Abre a conversa como visitante. A origem fica guardada para o convite de
+  // dentro do chat levar a atribuição até o /assinar.
+  const abrirConversa = async (section: LandingSection, posicao: string) => {
+    if (abrindo) return;
+    setAbrindo(true);
+    medir(section, posicao);
+    try {
+      sessionStorage.setItem('eco.funil.conversa', `${conversa?.origem ?? config.from}_${posicao}`);
+    } catch {
+      // sem sessionStorage, o convite usa a origem padrão
+    }
+    try {
+      await loginAsGuest();
+    } catch {
+      // sem modo visitante, o /app manda para a entrada
+    }
+    navigate('/app/chat');
+  };
+
+  const Botao = ({ section, posicao, texto }: { section: LandingSection; posicao: string; texto?: string }) =>
+    conversa && section !== 'pricing' ? (
+      <button type="button" className="reino-placa" onClick={() => void abrirConversa(section, posicao)}>
+        {abrindo ? 'Abrindo a conversa…' : (texto ?? conversa.texto)} <span aria-hidden="true">→</span>
+      </button>
+    ) : (
+      <Link to={href(posicao)} className="reino-placa" onClick={() => medir(section, posicao)}>
+        {texto ?? cta} <span aria-hidden="true">→</span>
+      </Link>
+    );
+
+  // Linha sob os botões principais: com a conversa primeiro, ela diz que não
+  // precisa de cadastro; sem, é a oferta do teste.
+  const linhaOferta = conversa
+    ? `Sem cadastro para começar. Para continuar, 7 dias grátis e depois ${OFFER.priceMonthly}.`
+    : `${OFFER.trialAfterPrice}. Cancele quando quiser.`;
 
   return (
     <div className="rl" data-mood={mood}>
@@ -123,16 +175,22 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
           <a href="#preco">Preço</a>
           <Link to="/login">Entrar</Link>
         </nav>
-        <Link to={href('topo')} className="rl-topo__cta" onClick={() => medir('topbar', 'topo')}>
-          Começar grátis
-        </Link>
+        {conversa ? (
+          <button type="button" className="rl-topo__cta" onClick={() => void abrirConversa('topbar', 'topo')}>
+            Conversar agora
+          </button>
+        ) : (
+          <Link to={href('topo')} className="rl-topo__cta" onClick={() => medir('topbar', 'topo')}>
+            Começar grátis
+          </Link>
+        )}
       </header>
 
       {/* ── Chegada: a promessa ── */}
       <div ref={chegadaRef}>
         <ReinoChegada mood={mood} imagem={cena.src} foco={cena.foco} lugar={config.rotulo} titulo={config.titulo} sobre={config.sobre}>
           <Botao section="hero" posicao="hero" />
-          <p className="rl-oferta-linha">{OFFER.trialAfterPrice}. Cancele quando quiser.</p>
+          <p className="rl-oferta-linha">{linhaOferta}</p>
         </ReinoChegada>
       </div>
 
@@ -283,7 +341,7 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
             {config.fechamento.titulo}
           </h2>
           <Botao section="fechamento" posicao="fechamento" />
-          <p className="rl-oferta-linha">{OFFER.trialAfterPrice}. Cancele quando quiser.</p>
+          <p className="rl-oferta-linha">{linhaOferta}</p>
         </div>
       </section>
 
@@ -320,15 +378,26 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
 
       {/* ── Barra fixa do celular ── */}
       <div className={`rl-barra${mostrarBarra ? ' is-visivel' : ''}`} aria-hidden={!mostrarBarra}>
-        <span className="rl-barra__texto">{OFFER.trialAfterPrice}</span>
-        <Link
-          to={href('barra')}
-          className="rl-barra__cta"
-          tabIndex={mostrarBarra ? 0 : -1}
-          onClick={() => medir('sticky', 'barra')}
-        >
-          Começar
-        </Link>
+        <span className="rl-barra__texto">{conversa ? 'Sem cadastro' : OFFER.trialAfterPrice}</span>
+        {conversa ? (
+          <button
+            type="button"
+            className="rl-barra__cta"
+            tabIndex={mostrarBarra ? 0 : -1}
+            onClick={() => void abrirConversa('sticky', 'barra')}
+          >
+            Conversar
+          </button>
+        ) : (
+          <Link
+            to={href('barra')}
+            className="rl-barra__cta"
+            tabIndex={mostrarBarra ? 0 : -1}
+            onClick={() => medir('sticky', 'barra')}
+          >
+            Começar
+          </Link>
+        )}
       </div>
     </div>
   );
