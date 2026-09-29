@@ -2964,3 +2964,166 @@
     padding: 40px;
   }
 }
+
+/* ===== player: centro que nunca invade o topo + frase calma + horizonte pintado ===== */
+.reino-player .reino-player__centro {
+  justify-content: flex-start;
+  position: relative;
+  z-index: 1;
+}
+.reino-player .reino-player__centro > :first-child {
+  margin-top: auto;
+}
+.reino-player .reino-player__centro > :last-child {
+  margin-bottom: auto;
+}
+.reino-player__convite {
+  margin: 4px 0 0;
+  max-width: 22rem;
+  font: 400 15px/1.45 var(--r-display);
+  color: var(--r-fg2);
+  text-align: center;
+}
+.reino-player__horizonte {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(70px, 14vh, 150px);
+  pointer-events: none;
+  opacity: 0.55;
+  clip-path: polygon(0% 18%, 8% 10%, 17% 16%, 27% 6%, 38% 14%, 49% 4%, 60% 13%, 71% 7%, 82% 15%, 92% 8%, 100% 14%, 100% 100%, 0% 100%);
+}
+.reino-player__horizonte svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.reino-player {
+  overflow: hidden;
+}
+
+/* ===== descanso de tela (enquanto a meditação toca) ===== */
+.reino-descanso {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  display: grid;
+  place-items: center;
+  background: #10153a;
+  color: #f4f1e8;
+  cursor: pointer;
+  animation: reino-descanso-entra 900ms ease-out both;
+}
+.reino-descanso__pintura {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.42;
+}
+.reino-descanso__miolo {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  text-align: center;
+}
+.reino-descanso__rotulo,
+.reino-descanso__voltar {
+  margin: 0;
+  font: 400 12px 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(244, 241, 232, 0.72);
+}
+.reino-descanso__tempo {
+  margin: 0;
+  font: 400 clamp(64px, 16vw, 112px) / 1 'Young Serif', Georgia, serif;
+  font-variant-numeric: tabular-nums;
+  color: #f4f1e8;
+}
+.reino-descanso__titulo {
+  margin: 0;
+  max-width: 24rem;
+  font: 400 clamp(19px, 3vw, 24px) / 1.3 'Young Serif', Georgia, serif;
+  color: #edb85a;
+}
+.reino-descanso__voltar {
+  position: absolute;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+@keyframes reino-descanso-entra {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reino-descanso {
+    animation: none;
+  }
+}
+
+/* conclusão: a pintura da sessão no topo e o astro junto do "Muito bem." */
+.reino-conclusao__pintura {
+  margin: 18px 0 6px;
+  aspect-ratio: 16 / 7;
+  overflow: hidden;
+}
+.reino-conclusao__pintura img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reino-conclusao__titulo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.reino-conclusao__astro {
+  width: 0.62em;
+  height: 0.62em;
+  flex-shrink: 0;
+}
+/* avisos do player no fluxo (nunca por cima dos controles) */
+.reino-player__aviso {
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 0 14px;
+}
+.reino-player__aviso + .reino-player__arte {
+  margin-top: 0;
+}
+.reino-player__rodape + .reino-player__aviso {
+  margin: 14px 0 0;
+}
+/* avisos do player em uma linha, sem caixa */
+.reino-player__linha {
+  margin: 0;
+  text-align: center;
+  font: 400 15px/1.5 var(--r-ui);
+  color: var(--r-fg);
+}
+.reino-player__linha button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--r-ocre);
+  font: 600 15px var(--r-ui);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.reino-player__linha.is-discreta {
+  font: 400 12.5px 'IBM Plex Mono', ui-monospace, monospace;
+  color: var(--r-fg2);
+}

@@ -1,5 +1,5 @@
-import type { ChangeEvent } from 'react';
-import { PincelProgresso } from './ReinoScene';
+import type { ChangeEvent, ReactNode } from 'react';
+import { PincelProgresso, ReinoScene } from './ReinoScene';
 import './reino.css';
 
 /**
@@ -11,7 +11,8 @@ interface ReinoPlayerProps {
   titulo: string;
   duracaoRotulo: string;
   imagem: string;
-  lugar: string;
+  /** não aparece mais no player (o cabeçalho já diz onde você está); mantido por compatibilidade */
+  lugar?: string;
   /** ex.: "Noite 2 de 7" */
   etapa?: string;
   /** progresso da jornada (noites feitas / 7), quando houver */
@@ -32,13 +33,16 @@ interface ReinoPlayerProps {
   onFavorite?: () => void;
   volume: number;
   onVolume: (v: number) => void;
+  /** aviso acima da pintura (ex.: continuar de onde parou): no fluxo, nunca por cima */
+  avisoTopo?: ReactNode;
+  /** aviso abaixo dos controles (ex.: pode bloquear a tela) */
+  avisoBase?: ReactNode;
 }
 
 export default function ReinoPlayer({
   titulo,
   duracaoRotulo,
   imagem,
-  lugar,
   etapa,
   jornada,
   isPlaying,
@@ -56,6 +60,8 @@ export default function ReinoPlayer({
   onFavorite,
   volume,
   onVolume,
+  avisoTopo,
+  avisoBase,
 }: ReinoPlayerProps) {
   const frac = duration > 0 ? currentTime / duration : 0;
   // capa pode ser um caminho de imagem ou um fundo CSS (url(...) / gradiente)
@@ -67,7 +73,7 @@ export default function ReinoPlayer({
         <button type="button" className="reino-chegada__voltar" onClick={onBack}>
           <span aria-hidden="true">←</span> Voltar
         </button>
-        <p className="reino-player__lugar">{lugar}</p>
+        <span />
         {onFavorite ? (
           <button
             type="button"
@@ -83,6 +89,7 @@ export default function ReinoPlayer({
       </div>
 
       <div className="reino-player__centro">
+        {avisoTopo && <div className="reino-player__aviso">{avisoTopo}</div>}
         <div className="reino-player__arte reino-rasgo-a">
           {capaCss ? (
             <span className="reino-player__arte-css" style={{ background: imagem, backgroundSize: 'cover', backgroundPosition: 'center' }} />
@@ -97,6 +104,7 @@ export default function ReinoPlayer({
             {etapa ? `${etapa} · ${duracaoRotulo}` : duracaoRotulo}
           </p>
           {jornada !== undefined && <PincelProgresso value={jornada} className="reino-player__jornada" />}
+          <p className="reino-player__convite">Feche os olhos quando quiser. A voz conduz o resto.</p>
         </div>
 
         <div className="reino-player__controles">
@@ -166,6 +174,11 @@ export default function ReinoPlayer({
             />
           </label>
         </div>
+        {avisoBase && <div className="reino-player__aviso">{avisoBase}</div>}
+      </div>
+      {/* o horizonte do reino na base da tela: os morros e o lago do panorama */}
+      <div className="reino-player__horizonte" aria-hidden="true">
+        <ReinoScene crop={[0, 470, 2172, 254]} />
       </div>
     </div>
   );

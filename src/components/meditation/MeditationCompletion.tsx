@@ -20,6 +20,8 @@ import MeditationFeedback from '@/components/meditation/MeditationFeedback';
 import { trackDiarioViewedPostMeditation } from '@/lib/mixpanelDiarioEvents';
 import { useAuth } from '@/contexts/AuthContext';
 import '@/components/reino/reino.css';
+import { Astro } from '@/components/reino/ReinoScene';
+import { getReinoMood } from '@/components/reino/reinoMood';
 
 const BLUE_SOFT = 'rgba(148,136,196,0.12)';
 const BLUE_BORDER = 'rgba(148,136,196,0.28)';
@@ -87,6 +89,8 @@ interface MeditationCompletionProps {
   // Jornada das 7 noites (sono autenticado) — substitui o card "Próxima
   // meditação" + grid "Continue sua jornada".
   sonoJourney?: SonoNightsJourneyProps;
+  /** pintura da sessão que acabou (topo da conclusão no reino) */
+  imagemUrl?: string;
 }
 
 export default function MeditationCompletion({
@@ -95,6 +99,7 @@ export default function MeditationCompletion({
   meditationDuration,
   meditationCategory,
   onDismiss,
+  imagemUrl,
   nextNight,
   sessionMetrics,
   isSonoGuestMode = false,
@@ -211,10 +216,17 @@ export default function MeditationCompletion({
             <button type="button" className="reino-chegada__voltar" onClick={onDismiss}>
               <span aria-hidden="true">←</span> Voltar
             </button>
-            <p className="reino-rotulo">Sessão concluída</p>
+            <span />
           </div>
 
+          {imagemUrl && !/^(url\(|linear-gradient|radial-gradient)/.test(imagemUrl) && (
+            <div className="reino-conclusao__pintura reino-rasgo-a" aria-hidden="true">
+              <img src={imagemUrl} alt="" decoding="async" />
+            </div>
+          )}
+
           <h1 id="conclusao-titulo" className="reino-conclusao__titulo">
+            <Astro className="reino-conclusao__astro" mood={getReinoMood()} />
             Muito bem.
           </h1>
           <p className="reino-conclusao__sessao">{meditationTitle}</p>
@@ -231,7 +243,7 @@ export default function MeditationCompletion({
 
           {!showSonoJourney && nextNight && (
             <section className="reino-conclusao__bloco" aria-labelledby="conclusao-proxima">
-              <p className="reino-rotulo">SOM.02 · Próxima noite</p>
+              <p className="reino-rotulo">Próxima noite</p>
               <h2 id="conclusao-proxima" className="reino-corpo__titulo" style={{ fontSize: 24 }}>
                 Noite {nextNight.nightNumber}: {nextNight.title}
               </h2>
@@ -246,7 +258,7 @@ export default function MeditationCompletion({
 
           {todayMaxim && (
             <section className="reino-sonho__pagina reino-rasgo-a reino-conclusao__reflexao" aria-labelledby="conclusao-reflexao">
-              <p className="reino-rotulo">STO.05 · Do Pórtico, a reflexão de hoje</p>
+              <p className="reino-rotulo">A reflexão de hoje</p>
               <h2 id="conclusao-reflexao" className="reino-conclusao__maxima">
                 {todayMaxim.title}
               </h2>
@@ -264,7 +276,6 @@ export default function MeditationCompletion({
 
           {!showSonoJourney && relatedMeditations.length > 0 && (
             <section className="reino-conclusao__bloco" aria-labelledby="conclusao-continue">
-              <p className="reino-rotulo">Para depois</p>
               <h2 id="conclusao-continue" className="reino-corpo__titulo" style={{ fontSize: 24 }}>
                 Continue a trilha
               </h2>

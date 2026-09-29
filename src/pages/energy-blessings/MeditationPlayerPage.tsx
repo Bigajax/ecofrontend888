@@ -1194,6 +1194,34 @@ export default function MeditationPlayerPage() {
             onFavorite={handleFavoriteToggle}
             volume={meditationVolume}
             onVolume={setMeditationVolume}
+            avisoTopo={
+              showResumePrompt && savedProgress !== null ? (
+                <p className="reino-player__linha" role="status">
+                  Continuar de {formatTime(savedProgress)}?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (audioRef.current) audioRef.current.currentTime = savedProgress;
+                      setCurrentTime(savedProgress);
+                      setShowResumePrompt(false);
+                    }}
+                  >
+                    Sim
+                  </button>
+                  {' · '}
+                  <button type="button" onClick={() => setShowResumePrompt(false)}>
+                    Do início
+                  </button>
+                </p>
+              ) : undefined
+            }
+            avisoBase={
+              showLockTip ? (
+                <p className="reino-player__linha is-discreta" role="status">
+                  Pode bloquear a tela: a voz continua tocando.
+                </p>
+              ) : undefined
+            }
           />
         </>
       ) : (
@@ -1749,19 +1777,6 @@ export default function MeditationPlayerPage() {
       />
 
       {/* Dica de tela bloqueada — aparece uma vez após o áudio iniciar */}
-      {showLockTip && !sonoGuestMode && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm">
-          <div className="reino-player-aviso" role="status">
-            <p>
-              Pode bloquear a tela.
-              <small>A voz e o som de fundo continuam tocando.</small>
-            </p>
-            <button type="button" onClick={() => setShowLockTip(false)} aria-label="Fechar aviso">
-              ×
-            </button>
-          </div>
-        </div>
-      )}
       {showLockTip && sonoGuestMode && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm animate-slide-down">
           <div
@@ -1817,33 +1832,6 @@ export default function MeditationPlayerPage() {
       )}
 
       {/* Resume Progress Prompt */}
-      {showResumePrompt && savedProgress !== null && !sonoGuestMode && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm">
-          <div className="reino-player-aviso" role="dialog" aria-label="Continuar de onde parou">
-            <p>
-              Continuar de onde parou?
-              <small>Você tinha chegado em {formatTime(savedProgress)}.</small>
-            </p>
-            <span />
-          </div>
-          <div className="reino-player-aviso__acoes">
-            <button
-              type="button"
-              className="reino-placa"
-              onClick={() => {
-                if (audioRef.current) audioRef.current.currentTime = savedProgress;
-                setCurrentTime(savedProgress);
-                setShowResumePrompt(false);
-              }}
-            >
-              Continuar
-            </button>
-            <button type="button" className="reino-chegada__voltar" onClick={() => setShowResumePrompt(false)}>
-              Começar do início
-            </button>
-          </div>
-        </div>
-      )}
       {showResumePrompt && savedProgress !== null && sonoGuestMode && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm animate-slide-down">
           <div
@@ -1884,6 +1872,7 @@ export default function MeditationPlayerPage() {
         elapsedSeconds={Math.floor(currentTime)}
         meditationTitle={meditationData.title}
         category={category}
+        imagem={meditationData.imageUrl}
         onDismiss={resetAmbientTimer}
       />
 
@@ -1921,6 +1910,7 @@ export default function MeditationPlayerPage() {
           meditationTitle={meditationData.title}
           meditationDuration={duration}
           meditationCategory={category}
+          imagemUrl={meditationData.imageUrl}
           isSonoGuestMode={sonoGuestMode && !isSonoGuestNight1}
           onCheckout={sonoGuestMode ? () => openSonoCheckout({ origin: 'meditation_completion_sono_guest' }) : undefined}
           sonoCheckoutLoading={sonoCheckoutLoading}
