@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import HomeHeader from '@/components/home/HomeHeader';
 import { PANORAMA, ReinoPintura, ReinoScene, type ReinoCrop, type ReinoRegiao } from '@/components/reino/ReinoScene';
+import { PARA_QUE_SERVE } from '@/components/reino/lugares';
 import '@/components/reino/reino.css';
 
 interface Destino {
@@ -10,7 +11,7 @@ interface Destino {
 }
 
 interface Regiao {
-  id: string;
+  id: keyof typeof PARA_QUE_SERVE;
   nome: string;
   codigo: string;
   sobre: string;
@@ -118,7 +119,7 @@ export default function MapaPage() {
                 onClick={() => irPara(r.id)}
               >
                 <b>{r.nome}</b>
-                <span>{r.codigo.split(' / ')[0]}</span>
+                <span>{PARA_QUE_SERVE[r.id]}</span>
               </button>
             ))}
           </div>
@@ -137,6 +138,7 @@ export default function MapaPage() {
               <div className="reino-mapa__texto">
                 <p className="reino-rotulo">{r.codigo}</p>
                 <h2 className="reino-corpo__titulo">{r.nome}</h2>
+                <p className="reino-mapa__serve">{PARA_QUE_SERVE[r.id]}</p>
                 <p className="reino-corpo__sobre">{r.sobre}</p>
                 <ol className="reino-sumario reino-mapa__destinos">
                   {r.destinos.map((d, j) => (

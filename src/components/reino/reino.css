@@ -824,7 +824,9 @@
   font: 400 15px/1.2 var(--r-display);
 }
 .reino-mapa__pino span {
-  font: 400 11px var(--r-mono);
+  max-width: 12.5rem;
+  white-space: normal;
+  font: 400 12px/1.35 var(--r-ui);
   color: var(--r-fg2);
 }
 .reino-mapa__pino:last-child {
@@ -2511,4 +2513,23 @@
 }
 .reino-casa-topo .reino-casa-lateral__rotulo {
   font-size: 11px;
+}
+
+/* a linha de todo dia: o que cada item e cada lugar é, para quem chega pela primeira vez */
+.reino-sumario__d {
+  grid-column: 2 / -1;
+  font: 400 14px/1.45 var(--r-ui);
+  color: var(--r-fg2);
+  text-align: left;
+}
+.reino-horizonte__serve {
+  display: block;
+  margin-top: 3px;
+  font: 400 13.5px/1.4 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-mapa__serve {
+  margin: 2px 0 8px;
+  font: 500 16px/1.45 var(--r-ui);
+  color: var(--r-fg);
 }

@@ -6,6 +6,7 @@ import { trackRitualCardClicked, trackRitualCardViewed } from '@/lib/mixpanelRit
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import { PincelProgresso, ReinoPintura, ReinoScene, type ReinoCrop, type ReinoRegiao } from '@/components/reino/ReinoScene';
 import { formatHojeLabel, getFirstName, getReinoMood, type ReinoMood } from '@/components/reino/reinoMood';
+import { PARA_QUE_SERVE } from '@/components/reino/lugares';
 import '@/components/reino/reino.css';
 
 const RITUAL_SOURCE = 'home_reino';
@@ -23,13 +24,15 @@ interface HomeReinoHeroProps {
 interface ItemSumario {
   id: string;
   titulo: string;
+  /** o que é, em palavras de todo dia (para quem chega pela primeira vez) */
+  sobre: string;
   meta: string;
   progresso?: number;
   onClick: () => void;
 }
 
 interface Lugar {
-  id: string;
+  id: keyof typeof PARA_QUE_SERVE;
   nome: string;
   codigo: string;
   crop: ReinoCrop;
@@ -108,10 +111,17 @@ export default function HomeReinoHero({
   const irSonhos = () => navigate('/app/dream');
   const irTrilhas = () => navigate('/app/programas');
 
-  const conversar: ItemSumario = { id: 'eco', titulo: 'Conversar com a Eco', meta: 'ECO.01', onClick: onStartChat };
+  const conversar: ItemSumario = {
+    id: 'eco',
+    titulo: 'Conversar com a Eco',
+    sobre: 'Conte como você está. A Eco escuta e responde.',
+    meta: 'quando quiser',
+    onClick: onStartChat,
+  };
   const respirar: ItemSumario = {
     id: 'respirar',
     titulo: 'Respirar',
+    sobre: 'Uma pausa guiada para acalmar o corpo.',
     meta: '7 min',
     onClick: () => onDailyRecommendation('rec_2'),
   };
@@ -127,8 +137,20 @@ export default function HomeReinoHero({
       onPlaca: abrirDiario,
       secao: 'Para esta manhã',
       itens: [
-        { id: 'reflexao', titulo: 'A reflexão do Pórtico', meta: 'STO.05', onClick: abrirDiario },
-        { id: 'rotina', titulo: 'Rotina matinal', meta: '8 min', onClick: () => onDailyRecommendation('rec_1') },
+        {
+          id: 'reflexao',
+          titulo: 'A reflexão do Pórtico',
+          sobre: 'Uma frase estoica e um comentário curto para levar ao dia.',
+          meta: 'leitura',
+          onClick: abrirDiario,
+        },
+        {
+          id: 'rotina',
+          titulo: 'Rotina matinal',
+          sobre: 'Meditação guiada para começar o dia.',
+          meta: '8 min',
+          onClick: () => onDailyRecommendation('rec_1'),
+        },
         conversar,
       ],
       lugares: [
@@ -149,6 +171,7 @@ export default function HomeReinoHero({
         {
           id: 'drjoe',
           titulo: 'Desperte seu potencial interior',
+          sobre: 'Meditações guiadas do Dr. Joe Dispenza.',
           meta: '5 meditações',
           onClick: () => onBlessing('drjoe_collection'),
         },
@@ -169,6 +192,7 @@ export default function HomeReinoHero({
         {
           id: 'ritual',
           titulo: 'Ritual Boa Noite',
+          sobre: 'Sete noites para desacelerar antes de dormir.',
           meta: metaRitual(ritual),
           progresso: ritual.completedCount / TOTAL_NOITES,
           onClick: abrirRitual,
@@ -177,6 +201,7 @@ export default function HomeReinoHero({
         {
           id: 'adormeca',
           titulo: 'Adormeça sem carregar o dia',
+          sobre: 'Meditação para soltar o dia e pegar no sono.',
           meta: '9 min',
           onClick: () => onBlessing('blessing_8'),
         },
@@ -217,6 +242,7 @@ export default function HomeReinoHero({
                   <span className="reino-sumario__n">{String(i + 1).padStart(2, '0')}</span>
                   <span className="reino-sumario__t">{item.titulo}</span>
                   <span className="reino-sumario__m">{item.meta}</span>
+                  <span className="reino-sumario__d">{item.sobre}</span>
                   {item.progresso !== undefined && (
                     <PincelProgresso value={item.progresso} className="reino-sumario__pincel" />
                   )}
@@ -227,14 +253,14 @@ export default function HomeReinoHero({
         </div>
 
         <div className="reino-hero__lugares">
-          <h2 className="reino-rotulo">Lugares por perto</h2>
+          <h2 className="reino-rotulo">Outros lugares do reino</h2>
           <ul className="reino-horizonte">
             {c.lugares.map((lugar, i) => (
               <li key={lugar.id}>
                 <button type="button" onClick={lugar.onClick} className="reino-horizonte__lugar">
                   <ReinoScene crop={lugar.crop} small className={i % 2 ? 'reino-rasgo-b' : 'reino-rasgo-a'} />
                   <span className="reino-horizonte__nome">{lugar.nome}</span>
-                  <span className="reino-horizonte__codigo">{lugar.codigo}</span>
+                  <span className="reino-horizonte__serve">{PARA_QUE_SERVE[lugar.id]}</span>
                 </button>
               </li>
             ))}

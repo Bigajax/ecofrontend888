@@ -37,3 +37,16 @@ export function lugarDaRota(pathname: string): LugarDaRota {
   if (TRILHAS.some((r) => p.startsWith(r))) return { codigo: 'TRI.04', nome: 'As Trilhas', chegada: 'Seguindo a trilha' };
   return { nome: 'Ecotopia', chegada: 'Abrindo o reino' };
 }
+
+/**
+ * O que cada lugar é, em palavras de todo dia. O nome do lugar é poético;
+ * esta linha vai sempre junto, para quem chega pela primeira vez saber
+ * para onde ir. Mesma frase na home e no mapa.
+ */
+export const PARA_QUE_SERVE: Record<'casa' | 'vale' | 'lago' | 'trilhas' | 'portico', string> = {
+  casa: 'Converse com a Eco',
+  vale: 'Meditações e sons para dormir',
+  lago: 'Conte um sonho e entenda o que ele diz',
+  trilhas: 'Programas guiados, um dia de cada vez',
+  portico: 'Uma reflexão estoica por dia',
+};
