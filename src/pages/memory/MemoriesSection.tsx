@@ -1,194 +1,131 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { abrirPorta } from '@/utils/porta';
+import { useCasaDaMemoria } from './MemoryLayout';
+import { nomeDoTema, type Memoria } from '@/api/emocional';
 
-import type { Memoria } from '../../api/memoriaApi';
+/**
+ * Memórias: o que a Eco guardou, mês a mês, da mais recente para a mais
+ * antiga. Filtra por tema. Sem memória ainda, explica o que vira memória.
+ */
 
-import { useMemoryData, type ApiErrorDetails } from './memoryData';
-import MemoryCard from '../../components/memory/MemoryCard';
-import MemoriesFilterBar from '../../components/memory/MemoriesFilterBar';
-import MemoryEmptyState from '../../components/memory/MemoryEmptyState';
-import MemoryCardSkeleton from '../../components/memory/MemoryCardSkeleton';
-import { useMemoriesFilters } from './useMemoriesFilters';
-import { normalizeMemoryCollection, BUCKET_ORDER, groupMemoryCards } from './memoryCardDto';
-
-const PAGE_SIZE = 20;
-
-const REASON_LABEL: Record<string, string> = {
-  cors: 'motivo: CORS bloqueado',
-  network: 'motivo: rede indisponível',
-  timeout: 'motivo: timeout',
-  '5xx': 'motivo: erro 5xx',
-  unknown: 'motivo desconhecido',
+const tema = (m: Memoria) => {
+  const t = (m.dominio_vida || m.categoria || '').trim();
+  return t ? nomeDoTema(t) : '';
 };
 
-const describeDetails = (details: ApiErrorDetails | null) => {
-  if (!details) return null;
-  const parts: string[] = [];
-  if (details.status) {
-    parts.push(`status ${details.status}${details.statusText ? ` ${details.statusText}` : ''}`);
-  } else {
-    parts.push('status indisponível');
-  }
-  if (details.reason && REASON_LABEL[details.reason]) {
-    parts.push(REASON_LABEL[details.reason]);
-  }
-  if (details.message) {
-    parts.push(details.message);
-  }
-  return parts.join(' • ');
+function resumo(m: Memoria): string {
+  const bruto = (m.analise_resumo || m.resumo_eco || '').trim();
+  // resumos antigos vinham com rótulos e emoji ("Tags:", "Intensidade:"); fica só o texto
+  const primeira = bruto.split('\n').find((l) => l.trim() && !/^\W*(tags|emoção|intensidade|resumo)/i.test(l.trim()));
+  return (primeira ?? bruto).replace(/^[^\p{L}"]+/u, '').replace(/^"|"$/g, '');
+}
+
+const mes = (iso: string) => {
+  const t = new Date(iso).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
 };
+const dia = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 
-const MemoriesSection: React.FC = () => {
-  const {
-    memories,
-    memoriesLoading,
-    memoriesError,
-    memoriesErrorDetails,
-    refetchMemories,
-  } = useMemoryData();
+export default function MemoriesSection() {
+  const navigate = useNavigate();
+  const { memorias, totalGuardadas, janela } = useCasaDaMemoria();
+  const [filtro, setFiltro] = useState<string | null>(null);
 
-  const normalizedCards = useMemo(
-    () => normalizeMemoryCollection(memories as Memoria[]),
-    [memories]
-  );
+  const temas = useMemo(() => {
+    const freq = new Map<string, number>();
+    for (const m of memorias) {
+      const t = tema(m);
+      if (t) freq.set(t, (freq.get(t) ?? 0) + 1);
+    }
+    return [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([t]) => t);
+  }, [memorias]);
 
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const grupos = useMemo(() => {
+    const lista = memorias
+      .filter((m) => m.created_at && (!filtro || tema(m) === filtro))
+      .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+    const porMes = new Map<string, Memoria[]>();
+    for (const m of lista) {
+      const chave = mes(m.created_at!);
+      porMes.set(chave, [...(porMes.get(chave) ?? []), m]);
+    }
+    return [...porMes.entries()];
+  }, [memorias, filtro]);
 
-  const {
-    emotionOptions,
-    filteredMemories,
-    filters,
-    filtersActive,
-    setEmotionFilter,
-    setQueryFilter,
-    resetFilters,
-  } = useMemoriesFilters(normalizedCards);
-
-  const limitedMemories = useMemo(() => filteredMemories.slice(0, visibleCount), [filteredMemories, visibleCount]);
-  const limitedGroups = useMemo(() => groupMemoryCards(limitedMemories), [limitedMemories]);
-  const hasMore = filteredMemories.length > visibleCount;
-
-  if (memoriesLoading && memories.length === 0) {
+  if (memorias.length === 0) {
     return (
-      <div className="min-h-0 h-full max-h-[calc(100vh-96px)] overflow-y-auto overflow-x-hidden">
-        <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 py-8 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <MemoryCardSkeleton key={`memory-skeleton-${index}`} />
-          ))}
-        </div>
-      </div>
+      <section className="reino-casa__vazio">
+        <h2 className="reino-corpo__titulo">Ainda não há memórias.</h2>
+        <p>
+          Uma conversa vira memória quando pesa: quando você conta algo que mexe forte com você. A Eco guarda o
+          essencial, a emoção, o tema e um resumo. Só você vê.
+        </p>
+        <button type="button" className="reino-placa" onClick={() => navigate('/app/chat')}>
+          Conversar com a Eco <span aria-hidden="true">→</span>
+        </button>
+      </section>
     );
   }
 
-  if (memoriesError) {
-    return (
-      <div className="flex items-center justify-center h-64 px-6 text-center">
-        <div className="rounded-3xl border border-rose-100 bg-rose-50 px-6 py-5">
-          <p className="text-[15px] font-semibold text-rose-600">{memoriesError}</p>
-          {describeDetails(memoriesErrorDetails) ? (
-            <p className="mt-2 text-[12px] text-rose-500/80">
-              {`Detalhes técnicos: ${describeDetails(memoriesErrorDetails)}`}
-            </p>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => refetchMemories()}
-            className="mt-4 inline-flex items-center justify-center rounded-full border border-rose-200/70 bg-white/90 px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-white"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const escondidas = janela ? Math.max(0, totalGuardadas - memorias.length) : 0;
 
   return (
-    <div className="min-h-0 h-full max-h-[calc(100vh-96px)] overflow-y-auto overflow-x-hidden">
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
-        <section
-          className="rounded-3xl p-6 md:p-8 mb-8"
-          style={{ border: '1px solid rgba(0,0,0,0.06)', backgroundColor: '#FFFFFF', boxShadow: '0 4px 24px rgba(13,52,97,0.06)' }}
-        >
-          <header className="mb-6">
-            <h1
-              className="text-[36px] md:text-[44px] leading-[1.06] font-semibold tracking-tight"
-              style={{ fontFamily: 'var(--font-display,Playfair Display,Georgia,serif)', color: 'var(--eco-text,#38322A)' }}
+    <section aria-label="Memórias">
+      {temas.length > 1 && (
+        <div className="reino-filtros" role="group" aria-label="Filtrar por tema">
+          <button type="button" className="reino-filtro" aria-pressed={!filtro} onClick={() => setFiltro(null)}>
+            Todas
+          </button>
+          {temas.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className="reino-filtro"
+              aria-pressed={filtro === t}
+              onClick={() => setFiltro(filtro === t ? null : t)}
             >
-              Memórias
-            </h1>
-            <p className="eco-subtitle mt-3 text-[13px] md:text-[14px] leading-[1.7] max-w-2xl" style={{ color: 'var(--eco-muted,#9C938A)' }}>
-              Padrões, insights e reflexões organizados pela Eco.
-            </p>
-          </header>
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
-          <MemoriesFilterBar
-            emotionOptions={emotionOptions}
-            filters={filters}
-            filtersActive={filtersActive}
-            onEmotionChange={setEmotionFilter}
-            onQueryChange={setQueryFilter}
-            onReset={resetFilters}
-          />
-        </section>
-
-        {filteredMemories.length ? (
-          <motion.div layout className="space-y-8">
-            {BUCKET_ORDER.filter((bucket) => limitedGroups[bucket]?.length).map((bucket) => (
-              <motion.section
-                key={bucket}
-                layout
-                initial={false}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="h-px flex-1 bg-black/[0.06]" />
-                  <div
-                    className="flex items-center gap-2 rounded-full px-3.5 py-1"
-                    style={{ backgroundColor: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)' }}
-                  >
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: 'var(--eco-muted,#9C938A)' }}
-                    >
-                      {bucket}
+      {grupos.map(([nome, lista]) => (
+        <div key={nome} className="reino-casa__mes">
+          <p className="reino-rotulo">{nome}</p>
+          <ol className="reino-sumario reino-sessoes">
+            {lista.map((m) => (
+              <li key={m.id}>
+                <div className="reino-sessao reino-sessao--leitura">
+                  <span className="reino-sumario__n">{dia(m.created_at!)}</span>
+                  <span className="reino-sessao__texto">
+                    <span className="reino-casa__resumo">{resumo(m)}</span>
+                    <span className="reino-sessao__descricao">
+                      {[m.emocao_principal, tema(m)].filter(Boolean).join(' · ')}
                     </span>
-                    <span
-                      className="text-[10px] font-semibold rounded-full px-1.5 py-0.5"
-                      style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--eco-muted,#9C938A)' }}
-                    >
-                      {limitedGroups[bucket]!.length}
-                    </span>
-                  </div>
-                  <div className="h-px flex-1 bg-black/[0.06]" />
+                  </span>
+                  <span className="reino-sumario__m">
+                    {typeof m.intensidade === 'number' ? `${m.intensidade}/10` : ''}
+                  </span>
                 </div>
-                <ul className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
-                  {limitedGroups[bucket]!.map((memory) => (
-                    <MemoryCard key={memory.id} mem={memory} />
-                  ))}
-                </ul>
-              </motion.section>
+              </li>
             ))}
-            {hasMore ? (
-              <div className="flex justify-center pt-4">
-                <button
-                  type="button"
-                  onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-                  className="rounded-full border border-black/10 bg-white/70 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-white"
-                >
-                  Carregar mais
-                </button>
-              </div>
-            ) : null}
-          </motion.div>
-        ) : (
-          <MemoryEmptyState hasFilters={filtersActive} />
-        )}
-      </div>
-    </div>
-  );
-};
+          </ol>
+        </div>
+      ))}
 
-export default MemoriesSection;
+      {janela && (
+        <div className="reino-nota reino-casa__janela">
+          <p>
+            Você vê os últimos {janela.dias} dias
+            {escondidas > 0 ? `. Há mais ${escondidas} ${escondidas === 1 ? 'memória guardada' : 'memórias guardadas'}.` : '.'}{' '}
+            <button type="button" className="reino-aviso__acao" onClick={() => abrirPorta('memory_historico')}>
+              Ver tudo com a assinatura
+            </button>
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}

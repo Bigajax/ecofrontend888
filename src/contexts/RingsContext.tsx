@@ -187,12 +187,20 @@ export function RingsProvider({ children }: { children: ReactNode }) {
         // Try to load from backend first (if authenticated)
         if (user) {
           try {
-            const response = await ringsApi.getRitualHistory({ limit: 100, includeAnswers: true });
-            // Junta com o que está no aparelho em vez de substituir: um dia
-            // concluído aqui que o backend não tenha registrado (ex.: formato da
-            // jornada de 30 dias recusado) não pode sumir do progresso.
-            rituals = juntarRituais(response.rituals || [], [...loadRituals(userId), ...loadRituals(null)]);
-            console.log('[RingsContext] Loaded rituals from backend:', rituals.length);
+            const response = await ringsApi.historico(100);
+            const doServidor = response.rituals || [];
+            const doAparelho = [...loadRituals(userId), ...loadRituals(null)];
+            // Junta em vez de substituir: um dia feito aqui que o servidor ainda
+            // não tem não pode sumir do progresso.
+            rituals = juntarRituais(doServidor, doAparelho);
+
+            // O que só está no aparelho (dias antigos, dia feito como visitante)
+            // sobe para o servidor, sem esperar e sem duplicar.
+            const noServidor = new Set(doServidor.filter((r) => r.status === 'completed').map((r) => r.date));
+            const soAqui = doAparelho.filter((r) => r.status === 'completed' && r.answers?.length && !noServidor.has(r.date));
+            if (soAqui.length) {
+              ringsApi.migrar(soAqui).catch((e) => console.warn('[RingsContext] migrar falhou:', e));
+            }
 
             // Cache in localStorage
             saveRituals(rituals, userId);
@@ -309,20 +317,8 @@ export function RingsProvider({ children }: { children: ReactNode }) {
       }
 
       setCurrentRitual(ritual);
-
-      // Background API call (only for authenticated users)
-      if (user) {
-        try {
-          await ringsApi.saveRingAnswer(currentRitual.id, { ringId, answer, metadata });
-          console.log('[RingsContext] Answer saved to backend:', ringId);
-        } catch (error) {
-          console.error('[RingsContext] Failed to save answer to backend:', error);
-          // Note: Optimistic update is already applied, so UI stays consistent
-          // Could implement retry queue here if needed
-        }
-      }
     },
-    [currentRitual, user]
+    [currentRitual]
   );
 
   // Complete ritual (with backend integration)
@@ -337,13 +333,6 @@ export function RingsProvider({ children }: { children: ReactNode }) {
     if (resposta) {
       const nova: RingAnswer = { ...resposta, timestamp: new Date().toISOString() };
       base = { ...currentRitual, answers: [...currentRitual.answers.filter((a) => a.ringId !== nova.ringId), nova] };
-      if (user) {
-        try {
-          await ringsApi.saveRingAnswer(currentRitual.id, { ringId: nova.ringId, answer: nova.answer, metadata: nova.metadata });
-        } catch (erroResposta) {
-          console.error('[RingsContext] Failed to save answer to backend:', erroResposta);
-        }
-      }
     }
 
     // Jornada de 30 dias: o dia fecha com a resposta do anel da vez (antes
@@ -381,27 +370,12 @@ export function RingsProvider({ children }: { children: ReactNode }) {
     const newProgress = calculateProgress(updated, userId);
     setProgress(newProgress);
 
-    // Backend call (only for authenticated users)
-    if (user) {
-      try {
-        const response = await ringsApi.completeRitual(completed.id);
-        console.log('[RingsContext] Ritual completed on backend:', response);
-
-        // Update progress with backend streak data
-        if (response.streak) {
-          setProgress((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              currentStreak: response.streak.current,
-              longestStreak: response.streak.longest,
-            };
-          });
-        }
-      } catch (error) {
-        console.error('[RingsContext] Failed to complete ritual on backend:', error);
-        // Optimistic update already applied, ritual is marked complete locally
-      }
+    // Servidor: o dia inteiro num POST (a resposta do dia fecha o dia).
+    const doDia = resposta ?? completed.answers[completed.answers.length - 1];
+    if (user && doDia) {
+      ringsApi
+        .salvarDia({ date: completed.date, ringId: doDia.ringId, answer: doDia.answer, metadata: doDia.metadata })
+        .catch((e) => console.error('[RingsContext] salvarDia falhou (fica no aparelho e sobe depois):', e));
     }
   }, [currentRitual, allRituals, userId, user]);
 

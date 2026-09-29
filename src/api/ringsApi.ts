@@ -1,160 +1,43 @@
 /**
- * API client for Five Rings ritual management
- * Follows the same pattern as programsApi.ts
+ * Cinco Anéis no servidor (set/2026): o dia inteiro num POST só.
+ * O servidor fecha o dia por (usuário, data) e guarda a resposta por anel;
+ * repetir não duplica. Antes eram oito rotas, um id gerado no aparelho que o
+ * servidor não conhecia e a exigência das 5 respostas: nada salvava.
  */
 
 import { supabase } from '@/lib/supabaseClient';
-import type { DailyRitual, RingType, RingResponse } from '@/types/rings';
+import type { DailyRitual, RingType } from '@/types/rings';
 
-/**
- * Get API base URL
- * In production (Vercel), use proxy. In development, use direct backend URL.
- */
-function getApiBaseUrl(): string {
-  if (import.meta.env.PROD) {
-    return ''; // Use Vercel proxy
-  }
-  return import.meta.env.VITE_API_URL || 'https://ecobackend888.onrender.com';
+function base(): string {
+  return import.meta.env.PROD ? '' : import.meta.env.VITE_API_URL || 'https://ecobackend888.onrender.com';
 }
 
-/**
- * Get access token from Supabase session
- */
-async function getAccessToken(): Promise<string> {
-  const { data: { session }, error } = await supabase.auth.getSession();
-
-  if (error || !session) {
-    throw new Error('Não autenticado');
-  }
-
-  return session.access_token;
-}
-
-/**
- * Make authenticated API request
- */
-async function fetchAPI<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const token = await getAccessToken();
-  const baseUrl = getApiBaseUrl();
-  const url = `${baseUrl}/api/rings${endpoint}`;
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
+async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error('Não autenticado');
+  const r = await fetch(`${base()}/api/rings${caminho}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...init.headers },
   });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-    throw new Error(error.message || error.error || 'Erro na requisição');
+  if (!r.ok) {
+    const erro = await r.json().catch(() => ({}));
+    throw new Error(erro.message || erro.error || `Erro ${r.status}`);
   }
-
-  return response.json();
+  return r.json();
 }
 
-// =================== API ENDPOINTS ===================
+export function salvarDia(dia: { date: string; ringId: RingType; answer: string; metadata?: unknown }) {
+  return chamar<{ success: boolean; ritual: DailyRitual }>('/dia', { method: 'POST', body: JSON.stringify(dia) });
+}
 
-/**
- * POST /api/rings/start
- * Start a new daily ritual or resume existing one
- */
-export async function startRitual(data?: { date?: string; notes?: string }) {
-  return fetchAPI('/start', {
+export function historico(limit = 100) {
+  return chamar<{ rituals: DailyRitual[] }>(`/history?limit=${limit}`);
+}
+
+export function migrar(rituals: DailyRitual[]) {
+  return chamar<{ success: boolean; migratedCount: number }>('/migrate', {
     method: 'POST',
-    body: JSON.stringify(data || {}),
-  });
-}
-
-/**
- * POST /api/rings/:ritualId/answer
- * Save or update a ring answer
- */
-export async function saveRingAnswer(
-  ritualId: string,
-  data: { ringId: RingType; answer: string; metadata: RingResponse }
-) {
-  return fetchAPI(`/${ritualId}/answer`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-}
-
-/**
- * POST /api/rings/:ritualId/complete
- * Mark ritual as completed
- */
-export async function completeRitual(ritualId: string, notes?: string) {
-  return fetchAPI(`/${ritualId}/complete`, {
-    method: 'POST',
-    body: JSON.stringify({ notes }),
-  });
-}
-
-/**
- * GET /api/rings/history
- * Get ritual history with filters and pagination
- */
-export async function getRitualHistory(params?: {
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-  offset?: number;
-  status?: string;
-  includeAnswers?: boolean;
-}) {
-  const queryParams = new URLSearchParams();
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
-        queryParams.append(key, String(value));
-      }
-    });
-  }
-
-  const queryString = queryParams.toString();
-  const endpoint = queryString ? `/history?${queryString}` : '/history';
-
-  return fetchAPI(endpoint, { method: 'GET' });
-}
-
-/**
- * GET /api/rings/ritual/:ritualId
- * Get ritual details with all answers
- */
-export async function getRitualDetails(ritualId: string) {
-  return fetchAPI(`/ritual/${ritualId}`, { method: 'GET' });
-}
-
-/**
- * GET /api/rings/progress
- * Get user progress and statistics
- */
-export async function getProgress(forceRecalculate?: boolean) {
-  const endpoint = forceRecalculate ? '/progress?forceRecalculate=true' : '/progress';
-  return fetchAPI(endpoint, { method: 'GET' });
-}
-
-/**
- * POST /api/rings/:ritualId/abandon
- * Mark ritual as abandoned
- */
-export async function abandonRitual(ritualId: string) {
-  return fetchAPI(`/${ritualId}/abandon`, { method: 'POST' });
-}
-
-/**
- * POST /api/rings/migrate
- * Migrate rituals from localStorage to backend
- */
-export async function migrateFromLocalStorage(data: { rituals: DailyRitual[] }) {
-  return fetchAPI('/migrate', {
-    method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ rituals }),
   });
 }

@@ -5,6 +5,8 @@ import {
   type EcoStreamPromptReadyEvent,
 } from "../../api/ecoStream";
 import { collectTexts } from "../../api/askEcoResponse";
+import { supabase } from "../../lib/supabaseClient";
+import { abrirPorta } from "../../utils/porta";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
 import type { EnsureAssistantEventMeta, MessageTrackingRefs, ReplyStateController } from "./messageState";
 import {
@@ -151,6 +153,28 @@ const formatAbortReason = (input: unknown): string => {
 };
 
 const resolveAbortReason = (input: unknown): string => formatAbortReason(input);
+
+/**
+ * Token de quem está logado, lido do que o Supabase já guardou (sem esperar
+ * nada no caminho comum). Só se estiver para vencer pede a sessão renovada.
+ */
+function tokenDaSessao(): string | null | Promise<string | null> {
+  try {
+    const salvo = JSON.parse(localStorage.getItem("eco-auth-token") || "null") as {
+      access_token?: string;
+      expires_at?: number;
+    } | null;
+    if (!salvo?.access_token) return null;
+    const venceLogo = typeof salvo.expires_at === "number" && salvo.expires_at * 1000 < Date.now() + 60_000;
+    if (!venceLogo) return salvo.access_token;
+    return supabase.auth
+      .getSession()
+      .then(({ data }) => data.session?.access_token ?? null)
+      .catch(() => null);
+  } catch {
+    return null;
+  }
+}
 
 const mapStreamErrorToMessage = (code: string): string | null => {
   switch (code) {
@@ -1234,6 +1258,14 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
             if (clientMessageId && clientMessageId.trim()) {
               requestHeaders['X-Eco-Client-Message-Id'] = clientMessageId;
             }
+            // Quem está logado manda o token: é por ele que o servidor sabe de
+            // quem são as memórias e o limite do dia. Antes não ia token nenhum
+            // e nenhuma memória era salva para usuário logado.
+            if (!isGuest) {
+              const pedido = tokenDaSessao();
+              const token = pedido instanceof Promise ? await pedido : pedido;
+              if (token) requestHeaders['Authorization'] = `Bearer ${token}`;
+            }
 
             const fetchInit: RequestInit = {
               method: 'POST', // payload no corpo, evita URL gigante (HTTP 431)
@@ -1262,6 +1294,14 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
             clearReadyTimeout();
 
             if (!response.ok) {
+              // Limite do dia (conta grátis): mensagem clara e a Porta do reino.
+              if (response.status === 429) {
+                const corpo = await response.clone().json().catch(() => null);
+                if (corpo?.code === "DAILY_LIMIT") {
+                  setErroApi(`Você usou as ${corpo.limite} conversas de hoje. Amanhã tem mais.`);
+                  abrirPorta("chat_limite");
+                }
+              }
               const httpError = new Error(`HTTP ${response.status}: ${response.statusText}`);
               fetchError = httpError;
               response = null;

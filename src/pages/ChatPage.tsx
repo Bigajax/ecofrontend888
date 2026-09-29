@@ -53,6 +53,7 @@ import { useMessageFeedbackContext } from '../hooks/useMessageFeedbackContext';
 import { useAdminCommands } from '../hooks/useAdminCommands';
 import { sendPassiveSignal } from '../api/passiveSignals';
 import formatName from '../utils/formatName';
+import { EVENTO_MEMORIA_GUARDADA } from '../hooks/useEcoStream/streamEventHandlers';
 
 const NETWORK_ERROR_MESSAGE =
   'Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.';
@@ -247,6 +248,22 @@ function ChatPage() {
   }, [scheduleBehaviorHint]);
 
   const displayName = useMemo(() => formatName(rawUserName), [rawUserName]);
+
+  // Quando uma conversa vira memória, uma linha discreta por alguns segundos.
+  const [memoriaGuardada, setMemoriaGuardada] = useState(false);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const aoGuardar = () => {
+      setMemoriaGuardada(true);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setMemoriaGuardada(false), 9000);
+    };
+    window.addEventListener(EVENTO_MEMORIA_GUARDADA, aoGuardar);
+    return () => {
+      window.removeEventListener(EVENTO_MEMORIA_GUARDADA, aoGuardar);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -1001,6 +1018,15 @@ function ChatPage() {
                   <Suspense fallback={null}>
                     <TrialOnboarding />
                   </Suspense>
+                )}
+
+                {memoriaGuardada && (
+                  <p className="reino-guardou" role="status">
+                    A Eco guardou esta conversa nas suas memórias.{' '}
+                    <button type="button" onClick={() => navigate('/app/memory')}>
+                      Ver
+                    </button>
+                  </p>
                 )}
 
                 {erroApi && (

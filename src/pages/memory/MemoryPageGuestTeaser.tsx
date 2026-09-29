@@ -1,213 +1,82 @@
-/**
- * MemoryPageGuestTeaser Component
- *
- * Preview page para Memória/Perfil Emocional em guest mode
- * Mostra placeholders com blur + lista de features desbloqueadas
- */
-
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Lock } from 'lucide-react';
-import { useGuestExperience } from '@/contexts/GuestExperienceContext';
-import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
-import EmotionalMapPlaceholder from '@/components/memory/EmotionalMapPlaceholder';
-import TimelinePlaceholder from '@/components/memory/TimelinePlaceholder';
-import ThemeChartPlaceholder from '@/components/memory/ThemeChartPlaceholder';
 import HomeHeader from '@/components/home/HomeHeader';
-import { useEffect } from 'react';
+import ReinoChegada from '@/components/reino/ReinoChegada';
+import { getReinoMood } from '@/components/reino/reinoMood';
+import '@/components/reino/reino.css';
 
+/**
+ * Memórias para quem ainda não tem conta (set/2026): o que é e o que precisa.
+ * Visitante não guarda memória; com a conta grátis, as conversas que marcam
+ * viram memória e retrato. Antes: gráficos de mentira com cadeado, emoji e a
+ * promessa de recurso pago como "sempre gratuito".
+ */
 export default function MemoryPageGuestTeaser() {
   const navigate = useNavigate();
-  const { trackInteraction, trackProfileClick } = useGuestExperience();
-  const { checkTrigger } = useGuestConversionTriggers();
-
-  useEffect(() => {
-    // Track visualização da teaser page
-    trackInteraction('page_view', {
-      page: '/memory-teaser',
-      context: 'guest',
-    });
-
-    // Track profile click (já que chegaram até aqui)
-    trackProfileClick();
-
-    // Trigger conversão imediata - alta intenção
-    checkTrigger(ConversionSignals.profileClick());
-  }, [trackInteraction, trackProfileClick, checkTrigger]);
-
-  const handleCreateAccount = () => {
-    trackInteraction('conversion_cta_clicked', {
-      source: 'memory_teaser',
-      trigger: 'primary_button',
-    });
-
-    navigate('/register?returnTo=/app/memory');
-  };
-
   return (
-    <div className="min-h-screen bg-white font-primary">
-      {/* Header */}
+    <div className="reino-corpo page-with-nav" style={{ minHeight: '100dvh' }}>
       <HomeHeader />
-
-      <main className="relative mx-auto max-w-5xl px-4 py-8 md:px-8 md:py-12">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/app')}
-          className="absolute left-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--eco-text)] shadow-md border border-[var(--eco-line)] transition-all hover:bg-gray-50 hover:shadow-lg active:scale-95 md:left-8 md:top-8"
+      <main>
+        <ReinoChegada
+          mood={getReinoMood()}
+          imagem="/images/reino/casa.webp"
+          foco="20% 50%"
+          lugar="ECO.01 · Casa da Eco"
+          titulo="O que a Eco guarda"
+          sobre="As conversas que marcam viram memória. Delas sai o seu retrato."
+          voltar={{ rotulo: 'Voltar', onClick: () => navigate(-1) }}
         >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+          <button
+            type="button"
+            className="reino-placa"
+            onClick={() => navigate(`/register?returnTo=${encodeURIComponent('/app/memory')}`)}
+          >
+            Criar conta grátis <span aria-hidden="true">→</span>
+          </button>
+        </ReinoChegada>
 
-        {/* Header Section */}
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-12 space-y-4 pt-16 md:pt-4"
-        >
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-16 h-16 rounded-full bg-gradient-to-br from-eco-accent/20 to-eco-user/20 flex items-center justify-center shadow-md">
-              <Lock size={32} className="text-eco-accent" />
-            </div>
-            <div>
-              <h1 className="font-display text-4xl font-normal text-[var(--eco-text)] md:text-5xl">
-                Seu Perfil Emocional
-              </h1>
-              <p className="mt-2 text-lg text-[var(--eco-muted)]">
-                Descubra padrões nas suas emoções ao longo do tempo
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Chart Previews Grid */}
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="mb-12 grid gap-6 md:grid-cols-2"
-        >
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-[var(--eco-text)] uppercase tracking-wide">
-              Mapa Emocional
-            </h3>
-            <EmotionalMapPlaceholder />
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-[var(--eco-text)] uppercase tracking-wide">
-              Linha do Tempo
-            </h3>
-            <TimelinePlaceholder />
-          </div>
-
-          <div className="space-y-3 md:col-span-2">
-            <h3 className="text-sm font-semibold text-[var(--eco-text)] uppercase tracking-wide">
-              Temas das Conversas
-            </h3>
-            <ThemeChartPlaceholder />
-          </div>
-        </motion.div>
-
-        {/* Feature List + CTA */}
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="rounded-2xl border-2 border-eco-accent/30 bg-gradient-to-br from-eco-accent/5 to-eco-user/5 p-8 shadow-lg"
-        >
-          <h2 className="font-display text-3xl font-normal text-[var(--eco-text)] mb-6">
-            Crie sua conta para desbloquear:
-          </h2>
-
-          <ul className="space-y-4 mb-8">
-            <li className="flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">📊</span>
-              <div>
-                <p className="font-semibold text-[var(--eco-text)]">
-                  Mapa emocional em tempo real
-                </p>
-                <p className="text-sm text-[var(--eco-muted)] mt-1">
-                  Visualize a distribuição das suas emoções e como elas evoluem
-                </p>
+        <div className="reino-pagina">
+          <ol className="reino-sumario reino-sessoes">
+            <li>
+              <div className="reino-sessao reino-sessao--leitura">
+                <span className="reino-sumario__n">01</span>
+                <span className="reino-sessao__texto">
+                  <span className="reino-sumario__t">Memórias</span>
+                  <span className="reino-sessao__descricao">
+                    Quando uma conversa pesa, a Eco guarda o essencial: a emoção, o tema e um resumo. Só você vê.
+                  </span>
+                </span>
+                <span className="reino-sumario__m">conta grátis</span>
               </div>
             </li>
-
-            <li className="flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">📈</span>
-              <div>
-                <p className="font-semibold text-[var(--eco-text)]">
-                  Linha do tempo das emoções
-                </p>
-                <p className="text-sm text-[var(--eco-muted)] mt-1">
-                  Acompanhe suas tendências emocionais ao longo dos dias e semanas
-                </p>
+            <li>
+              <div className="reino-sessao reino-sessao--leitura">
+                <span className="reino-sumario__n">02</span>
+                <span className="reino-sessao__texto">
+                  <span className="reino-sumario__t">Retrato</span>
+                  <span className="reino-sessao__descricao">
+                    Em poucas frases, o que a Eco vê em você, e as emoções e temas que mais aparecem.
+                  </span>
+                </span>
+                <span className="reino-sumario__m">conta grátis</span>
               </div>
             </li>
-
-            <li className="flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">💭</span>
-              <div>
-                <p className="font-semibold text-[var(--eco-text)]">
-                  Memórias organizadas por tema
-                </p>
-                <p className="text-sm text-[var(--eco-muted)] mt-1">
-                  Todos os momentos importantes categorizados automaticamente
-                </p>
+            <li>
+              <div className="reino-sessao reino-sessao--leitura">
+                <span className="reino-sumario__n">03</span>
+                <span className="reino-sessao__texto">
+                  <span className="reino-sumario__t">Relatório</span>
+                  <span className="reino-sessao__descricao">
+                    Como foram os seus dias: quais foram mais leves, quais pesaram, o que mais voltou.
+                  </span>
+                </span>
+                <span className="reino-sumario__m">assinatura</span>
               </div>
             </li>
-
-            <li className="flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">🎯</span>
-              <div>
-                <p className="font-semibold text-[var(--eco-text)]">
-                  Insights sobre padrões
-                </p>
-                <p className="text-sm text-[var(--eco-muted)] mt-1">
-                  Descubra conexões entre suas emoções, contextos e comportamentos
-                </p>
-              </div>
-            </li>
-
-            <li className="flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">🔒</span>
-              <div>
-                <p className="font-semibold text-[var(--eco-text)]">
-                  Dados privados e criptografados
-                </p>
-                <p className="text-sm text-[var(--eco-muted)] mt-1">
-                  Sua jornada emocional permanece completamente privada e segura
-                </p>
-              </div>
-            </li>
-          </ul>
-
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <button
-              onClick={handleCreateAccount}
-              className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-eco-user to-eco-accent px-8 py-4 font-semibold text-white text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_8px_30px_rgba(167,132,108,0.3)] active:scale-95"
-            >
-              Criar minha conta
-            </button>
-
-            <p className="text-sm text-[var(--eco-muted)] text-center sm:text-left">
-              Sempre gratuito • Sem compromisso • 30 segundos
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Additional Context */}
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-          className="mt-8 text-center"
-        >
-          <p className="text-sm text-[var(--eco-muted)] leading-relaxed max-w-2xl mx-auto">
-            Seu perfil emocional está se formando a cada conversa com Eco.
-            Crie sua conta para visualizar padrões, organizar memórias e entender sua jornada interior.
+          </ol>
+          <p className="reino-casa__carregando" style={{ marginTop: 20 }}>
+            Sem conta, a conversa acontece, mas nada fica guardado.
           </p>
-        </motion.div>
+        </div>
       </main>
     </div>
   );

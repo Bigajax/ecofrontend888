@@ -4,6 +4,7 @@ import { getApiBase } from "../config/apiBase";
 import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
 import { getOrCreateSessionId } from "@/utils/identity";
 import { readGuestId } from "./guestIdentity";
+import { supabase } from "../lib/supabaseClient";
 
 const api = axios.create({
   baseURL: getApiBase(),
@@ -26,9 +27,17 @@ const hasWindow = typeof window !== "undefined";
 
 const AUTH_TOKEN_KEY = "auth_token";
 
-api.interceptors.request.use((config) => {
-  const headers = (config.headers ??= {});
-  const token = hasWindow ? window.localStorage.getItem(AUTH_TOKEN_KEY) || "" : "";
+api.interceptors.request.use(async (config) => {
+  const headers = config.headers as unknown as Record<string, string>;
+  // Token da sessão (renovado pelo Supabase); a cópia no localStorage é só reserva.
+  let token = "";
+  try {
+    const { data } = await supabase.auth.getSession();
+    token = data.session?.access_token ?? "";
+  } catch {
+    token = "";
+  }
+  if (!token && hasWindow) token = window.localStorage.getItem(AUTH_TOKEN_KEY) || "";
 
   const identityHeaders = buildIdentityHeaders();
   for (const [key, value] of Object.entries(identityHeaders)) {

@@ -8,7 +8,6 @@ import { isStreamActive, onStreamActivityChange } from '../hooks/useEcoStream/st
 import { getOrCreateGuestId, readPersistedGuestId } from '../api/guestIdentity';
 import type { SubscriptionState } from '../types/subscription';
 import { getSubscriptionStatus } from '../api/subscription';
-import * as ringsApi from '../api/ringsApi';
 import { isVipUser as checkIsVipUser } from '../constants/vipUsers';
 import { apiFetch } from '../api/apiFetch';
 import {
@@ -217,14 +216,7 @@ export async function migrateGuestData(newUserId: string): Promise<PreservedData
           const userRingsKey = `eco.rings.v1.rituals.${newUserId}`;
           localStorage.setItem(userRingsKey, guestRings);
 
-          // NOVO: Migrar para backend
-          try {
-            await ringsApi.migrateFromLocalStorage({ rituals: ringsData });
-            console.info('[Auth] Rings migrated to backend', { count: ringsData.length });
-          } catch (backendError) {
-            console.error('[Auth] Failed to migrate rings to backend:', backendError);
-            // Continue anyway - data is in localStorage
-          }
+          // O RingsContext sobe para o servidor o que estiver só no aparelho.
 
           // Encontrar o dia atual (último ritual)
           const lastRitual = ringsData[ringsData.length - 1];
