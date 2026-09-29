@@ -500,3 +500,51 @@
   text-transform: uppercase;
   color: var(--r-fg2);
 }
+
+/* Lago dos Sonhos (na /eco-ia): um painel de noite dentro da página */
+.rl-sonho {
+  max-width: 72rem;
+  margin-top: 64px;
+  padding: 44px 24px 48px;
+  background: #10153a;
+  color: #f4f1e8;
+  --r-fg: #f4f1e8;
+  --r-fg2: rgba(244, 241, 232, 0.72);
+  --r-anil: #f4f1e8;
+}
+@media (min-width: 768px) {
+  .rl-sonho {
+    padding: 56px 48px 60px;
+  }
+}
+.rl-sonho .reino-rotulo {
+  color: #edb85a;
+}
+.rl-sonho__cartas {
+  display: grid;
+  gap: 16px;
+  margin: 26px 0 26px;
+}
+@media (min-width: 820px) {
+  .rl-sonho__cartas {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  }
+}
+.rl-sonho__cartas > div {
+  padding: 18px 20px;
+  border: 1px solid rgba(244, 241, 232, 0.25);
+  border-radius: 4px;
+}
+.rl-sonho__texto {
+  margin: 8px 0 0;
+  font: 400 18px/1.55 var(--r-display);
+}
+.rl-link-forte {
+  display: inline-block;
+  color: inherit;
+  font: 600 16px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: #edb85a;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
