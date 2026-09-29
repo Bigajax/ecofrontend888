@@ -17,7 +17,6 @@ import {
 import RitualCompletion from '@/components/rings/RitualCompletion';
 import RingIcon from '@/components/rings/RingIcon';
 import RitualGuestGate from '@/components/rings/RitualGuestGate';
-import UpgradeModal from '@/components/subscription/UpgradeModal';
 import { PincelProgresso } from '@/components/reino/ReinoScene';
 import '@/components/reino/reino.css';
 
@@ -34,14 +33,18 @@ export default function DailyRitual() {
   const { currentRitual, startRitual, completeRitual, allRituals } = useRings();
   const { user, isGuestMode, isVipUser } = useAuth();
   const tier = useSubscriptionTier();
-  const { requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
+  const { requestUpgrade } = usePremiumContent();
 
   const isGuest = isGuestMode && !user && !isVipUser;
-  const isFreeBlocked = Boolean(user) && !isGuest && !canAccess('rings_daily', tier);
-
   const uid = user?.id ?? null;
   const feitosAntes = useMemo(() => diasConcluidos(allRituals).length, [allRituals]);
+  // O primeiro passo é de todos (set/2026): o plano grátis faz o dia 1 inteiro;
+  // a assinatura entra do dia 2 em diante. Antes o grátis era bloqueado já na
+  // entrada, sem ver uma pergunta.
   const hojeFeito = currentRitual?.status === 'completed';
+  // Só quando tenta um dia novo: revendo o dia de hoje (já feito) não há o que pedir.
+  const isFreeBlocked =
+    Boolean(user) && !isGuest && !canAccess('rings_daily', tier) && feitosAntes >= 1 && !hojeFeito;
   // O ponto é calculado sem contar o dia de hoje, para a tela mostrar o dia que se está fechando.
   const ponto = pontoDaJornada(hojeFeito ? feitosAntes - 1 : feitosAntes, lerInicioDoCiclo(uid));
   const anel = RINGS[ponto.anel];
@@ -83,7 +86,7 @@ export default function DailyRitual() {
   useEffect(() => {
     if (isFreeBlocked) {
       mixpanel.track('Assinatura · Limite free bloqueado', { limit_type: 'rings_premium', user_id: user?.id, tier });
-      requestUpgrade('rings_free_blocked');
+      requestUpgrade('rings_dia2');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFreeBlocked]);
@@ -93,6 +96,24 @@ export default function DailyRitual() {
   // Já fechou o dia de hoje (voltou para esta tela): mostra a chegada.
   if (concluido || hojeFeito) {
     return <RitualCompletion onBackHome={() => navigate('/app/rings')} />;
+  }
+
+  // Plano grátis depois do dia 1: a Porta abre sozinha; aqui fica o caminho para reabri-la.
+  if (isFreeBlocked && !hojeFeito) {
+    return (
+      <div className="reino-corpo reino-ritual">
+        <div className="reino-ritual__miolo">
+          <button type="button" className="reino-chegada__voltar" onClick={() => navigate('/app/rings')}>
+            <span aria-hidden="true">←</span> Voltar
+          </button>
+          <h1 className="reino-ritual__chegada">O dia {ponto.dia} abre com a assinatura.</h1>
+          <p className="reino-ritual__amanha">O primeiro dia foi seu. Os outros 29 seguem com todas as portas abertas.</p>
+          <button type="button" className="reino-placa" onClick={() => requestUpgrade('rings_dia2')}>
+            Ver como seguir <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Visitante que já fez o dia 1: o resto é com a conta.
@@ -197,14 +218,6 @@ export default function DailyRitual() {
         </div>
       </div>
 
-      <UpgradeModal
-        open={showUpgradeModal}
-        onClose={() => {
-          setShowUpgradeModal(false);
-          navigate('/app/rings');
-        }}
-        source="rings_free_blocked"
-      />
     </div>
   );
 }

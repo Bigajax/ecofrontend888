@@ -87,7 +87,8 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #3D6BB8 20%, #3358A3 40%, #2A478E 60%, #213779 80%, #182864 100%)',
     completed: false,
-    isPremium: true,
+    // Dia 1 é de todos: o primeiro passo de cada caminho é grátis (set/2026).
+    isPremium: false,
   },
   {
     id: 'blessing_3',

@@ -1,3 +1,4 @@
+import PortaDoReino from "@/components/reino/PortaDoReino";
 import {
   Suspense,
   useEffect,
@@ -774,6 +775,7 @@ export default function App(): JSX.Element {
         <PixelRouteListener />
         <MixpanelRouteListener />
         <GuestExperienceTracker />
+        <PortaDoReino />
         <RootErrorBoundary>
           <Suspense fallback="Carregando…">
             <AppChrome />

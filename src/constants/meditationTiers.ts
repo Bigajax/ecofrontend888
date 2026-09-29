@@ -82,7 +82,7 @@ export const MEDITATION_TIERS: Record<MeditationTier, TierConfig> = {
  *
  * Regras:
  * - Inicie Sua Jornada (intro_*): todas FREE
- * - Dr. Joe Dispenza: apenas 1ª (blessing_1) FREE como teaser; resto PREMIUM
+ * - Dr. Joe Dispenza: Dia 1 (blessing_2) e blessing_1 FREE; resto PREMIUM
  * - Standalone ≤7 min não-Dr.Joe: FREE
  * - Sono básica (sono_1): FREE; avançada (sono_2+): PREMIUM
  * - Recondicionar (blessing_3) e Espaço-Tempo (blessing_6): PREMIUM por nome
@@ -97,7 +97,7 @@ export const MEDITATION_TIER_MAP: Record<string, MeditationTier> = {
 
   // === DR. JOE DISPENZA — 1ª grátis (teaser), resto premium ===
   blessing_1: 'free',     // Bênção dos centros de energia (7 min) — teaser
-  blessing_2: 'premium',  // Sintonizar novos potenciais (7 min)
+  blessing_2: 'free',     // Sintonizar novos potenciais: o Dia 1 da jornada é grátis (set/2026)
   blessing_3: 'premium',  // Recondicionar o corpo e mente (7 min)
   blessing_5: 'premium',  // Meditação caminhando (5 min)
   blessing_6: 'premium',  // Espaço-Tempo (5 min)

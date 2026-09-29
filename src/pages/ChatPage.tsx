@@ -1,3 +1,4 @@
+import { abrirPorta } from '@/utils/porta';
 /* -------------------------------------------------------------------------- */
 /*  ChatPage.tsx — Modern minimalist layout (Claude/Ecotopia inspired)       */
 /* -------------------------------------------------------------------------- */
@@ -1155,6 +1156,12 @@ function ChatPage() {
                   });
                 }
                 setLoginGateOpen(false);
+                // Já tem conta (limite diário do plano grátis): a Porta, com o
+                // caminho dela; cadastro não faz sentido.
+                if (user) {
+                  abrirPorta('chat_limite_diario');
+                  return;
+                }
                 // Direto para a conta do funil (depois: plano + cartão). A origem vem
                 // da landing que abriu a conversa (ex.: /eco-ia), senão é o próprio convite.
                 let origem = 'chat_convite';

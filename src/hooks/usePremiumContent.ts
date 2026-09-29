@@ -1,9 +1,9 @@
+import { abrirPorta } from '@/utils/porta';
 import { isVipUser as checkIsVip } from '@/constants/vipUsers';
 // src/hooks/usePremiumContent.ts
 // Hook para validar acesso a conteúdo premium e gerenciar modal de upgrade
 
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import mixpanel from '../lib/mixpanel';
 import type { AccessValidation } from '../types/subscription';
@@ -36,7 +36,6 @@ import type { AccessValidation } from '../types/subscription';
  */
 export function usePremiumContent() {
   const auth = useAuth();
-  const navigate = useNavigate();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Extrair dados de subscription do AuthContext
@@ -120,12 +119,12 @@ export function usePremiumContent() {
         trial_days_remaining: trialDaysRemaining,
       });
 
-      // Unificado: paywall in-app vai direto para /assinar (passo de plano),
-      // mesmo fluxo dos CTAs de funil. Logado pula cadastro; guest cadastra e paga.
-      // Plano mensal (R$ 15,90) — alinha com a oferta canônica e com o funil do sono.
-      navigate(`/assinar?step=plan&plan=monthly&from=${from}`);
+      // A Porta do reino (set/2026): antes de mandar para o /assinar, mostra o
+      // caminho que a pessoa já fez ("não perca o que você construiu"). O botão
+      // dela leva ao /assinar com esta mesma origem.
+      abrirPorta(from);
     },
-    [user, subscription, isTrialActive, trialDaysRemaining, navigate]
+    [user, subscription, isTrialActive, trialDaysRemaining]
   );
 
   /**

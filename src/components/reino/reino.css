@@ -4330,3 +4330,47 @@
 .reino-trilha__aqui {
   white-space: nowrap;
 }
+
+/* ── A Porta do reino: o pedido com o caminho da pessoa (set/2026) ── */
+.reino-porta__caminho {
+  margin-top: 14px;
+  padding: 14px 0 0;
+  border-top: 1px dashed var(--r-trilho);
+}
+.reino-porta__caminho .reino-rotulo {
+  margin: 0;
+}
+.reino-porta__dias {
+  margin: 6px 0 0;
+  font: 400 22px/1.2 var(--r-display);
+  color: var(--r-anil);
+}
+.reino-porta__pincel {
+  display: block;
+  width: 100%;
+  height: 12px;
+  margin-top: 6px;
+}
+.reino-porta__feitos {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.reino-porta__feitos li {
+  position: relative;
+  padding-left: 18px;
+  font: 400 15px/1.4 var(--r-ui);
+  color: var(--r-anil);
+}
+.reino-porta__feitos li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.45em;
+  width: 9px;
+  height: 9px;
+  border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%;
+  background: var(--r-musgo);
+}
