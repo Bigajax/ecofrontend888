@@ -1,0 +1,287 @@
+/*
+ * Redesign "reino": um mundo íntimo e imperfeito.
+ * Tokens escopados em .reino-hero[data-mood] para não vazar no resto do app
+ * enquanto a migração é por partes. Sem gradiente liso, sem card, sem sombra.
+ */
+.reino-hero {
+  --r-display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+  --r-ui: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --r-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  --r-ocre: #edb85a;
+
+  /* noite é o padrão */
+  --r-bg: #10153a;
+  --r-fg: #f4f1e8;
+  --r-fg2: rgba(244, 241, 232, 0.68);
+  --r-trilho: rgba(244, 241, 232, 0.22);
+  --r-traco: var(--r-ocre);
+  --r-placa-bg: var(--r-ocre);
+  --r-placa-fg: #10153a;
+
+  background: var(--r-bg);
+  color: var(--r-fg);
+  font-family: var(--r-ui);
+  /* a borda de baixo do topo é rasgada, como papel */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), 91% calc(100% - 6px), 78% calc(100% - 15px), 64% calc(100% - 4px), 50% calc(100% - 13px), 36% calc(100% - 3px), 22% calc(100% - 12px), 9% calc(100% - 4px), 0 calc(100% - 11px));
+  padding-bottom: 12px;
+}
+/* o app pinta p/span/div com --eco-text e fonte própria; aqui dentro, herda do humor.
+   Especificidade igual à das classes abaixo, que vêm depois e ganham. */
+.reino-hero :where(p, span, div, li, button, h1, h2) {
+  color: inherit;
+  font-family: inherit;
+}
+
+.reino-hero[data-mood='amanhecer'] {
+  --r-bg: #f1e8d6;
+  --r-fg: #2a2238;
+  --r-fg2: #6e5a5e;
+  --r-trilho: rgba(42, 34, 56, 0.22);
+  --r-traco: #4e6b4a;
+  --r-placa-bg: #c98e86;
+  --r-placa-fg: #2a1a1e;
+}
+.reino-hero[data-mood='entardecer'] {
+  --r-bg: #4a1f2e;
+  --r-fg: #f4e7de;
+  --r-fg2: #c9b8dd;
+  --r-trilho: rgba(201, 184, 221, 0.3);
+  --r-placa-fg: #3a1622;
+}
+
+.reino-hero__grade {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 16px 36px;
+  display: grid;
+  gap: 22px;
+}
+@media (min-width: 768px) {
+  .reino-hero__grade {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    column-gap: 48px;
+    row-gap: 36px;
+    padding: 32px 32px 56px;
+    align-items: start;
+  }
+  .reino-hero__lugares {
+    grid-column: 1 / -1;
+  }
+}
+
+/* bordas rasgadas: nenhuma imagem é retângulo perfeito */
+.reino-rasgo-a {
+  clip-path: polygon(0% 2%, 9% 0%, 22% 1.5%, 37% 0.3%, 51% 1.8%, 66% 0.2%, 80% 1.6%, 93% 0.4%, 100% 1.9%, 99.4% 18%, 100% 37%, 99.2% 56%, 100% 74%, 99.3% 91%, 100% 98.6%, 88% 100%, 73% 98.8%, 58% 100%, 42% 98.6%, 27% 99.8%, 12% 98.5%, 0% 99.6%, 0.7% 82%, 0% 63%, 0.8% 44%, 0% 26%);
+}
+.reino-rasgo-b {
+  clip-path: polygon(1% 0.6%, 14% 1.8%, 30% 0%, 45% 1.4%, 61% 0.2%, 76% 1.7%, 90% 0.1%, 99% 1.2%, 100% 20%, 99.1% 41%, 100% 60%, 99.2% 80%, 99.6% 99.4%, 85% 98.4%, 70% 100%, 55% 98.7%, 39% 99.9%, 24% 98.4%, 8% 99.7%, 0% 98.8%, 0.9% 78%, 0% 57%, 0.9% 36%, 0% 15%);
+}
+
+.reino-hero__cena {
+  position: relative;
+  margin: 0 -16px;
+}
+.reino-hero__cena > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 6 / 5;
+}
+@media (min-width: 560px) and (max-width: 767px) {
+  .reino-hero__cena > img {
+    aspect-ratio: 16 / 9;
+  }
+}
+@media (min-width: 768px) {
+  .reino-hero__cena {
+    margin: 0;
+  }
+}
+.reino-hero__marca {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font: 400 16px/1 var(--r-display);
+  color: #f4f1e8;
+  text-shadow: 0 1px 8px rgba(16, 21, 58, 0.45);
+}
+.reino-astro {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.reino-hero__texto {
+  min-width: 0;
+}
+.reino-rotulo {
+  margin: 0;
+  font: 500 11.5px/1.3 var(--r-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--r-fg2);
+}
+.reino-hero__ola {
+  margin: 10px 0 0;
+  font: 400 clamp(32px, 4.4vw, 50px) / 1.05 var(--r-display);
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+  color: var(--r-fg);
+}
+.reino-hero__pergunta {
+  margin: 10px 0 0;
+  max-width: 28em;
+  font-size: clamp(17px, 1.6vw, 19px);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+/* placa de caminho: a ação principal, uma por tela */
+.reino-placa {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  margin-top: 20px;
+  padding: 12px 30px 13px 16px;
+  border: 0;
+  background: none;
+  color: var(--r-placa-fg);
+  font: 600 13px/1 var(--r-ui);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.reino-placa::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--r-placa-bg);
+  clip-path: polygon(0 9%, 4% 0, 90% 3%, 100% 50%, 91% 97%, 3% 100%, 1% 55%);
+  transition: transform 160ms ease-out;
+}
+.reino-placa:hover::before {
+  transform: translateX(3px);
+}
+.reino-placa:active::before {
+  transform: translateX(1px);
+}
+
+.reino-hero__secao {
+  margin-top: 30px;
+  margin-bottom: 4px;
+}
+.reino-sumario {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.reino-sumario li {
+  border-bottom: 1px dashed var(--r-trilho);
+}
+.reino-sumario__item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-sumario__n {
+  font: 500 11.5px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-sumario__t {
+  font: 400 18px/1.2 var(--r-display);
+  min-width: 0;
+}
+.reino-sumario__item:hover .reino-sumario__t {
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 4px;
+}
+.reino-sumario__m {
+  font: 400 11.5px var(--r-mono);
+  color: var(--r-fg2);
+  white-space: nowrap;
+}
+.reino-sumario__pincel {
+  grid-column: 2 / -1;
+  display: block;
+  width: 100%;
+  height: 12px;
+  margin-top: 4px;
+}
+
+/* horizonte contínuo: janelas vizinhas para a mesma paisagem */
+.reino-hero__lugares .reino-rotulo {
+  margin-bottom: 10px;
+}
+.reino-horizonte {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+@media (min-width: 768px) {
+  .reino-horizonte {
+    gap: 10px;
+  }
+}
+.reino-horizonte__lugar {
+  width: 100%;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-horizonte__lugar svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+@media (min-width: 768px) {
+  .reino-horizonte__lugar svg {
+    aspect-ratio: 16 / 9;
+  }
+}
+.reino-horizonte__nome {
+  display: block;
+  margin-top: 7px;
+  font: 400 clamp(14px, 1.4vw, 17px) / 1.2 var(--r-display);
+}
+.reino-horizonte__codigo {
+  display: block;
+  margin-top: 2px;
+  font: 400 10.5px var(--r-mono);
+  color: var(--r-fg2);
+}
+
+.reino-hero button:focus-visible {
+  outline: 2px solid var(--r-ocre);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reino-placa::before {
+    transition: none;
+  }
+}

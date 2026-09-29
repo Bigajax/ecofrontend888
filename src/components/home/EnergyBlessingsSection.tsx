@@ -131,7 +131,7 @@ export default function EnergyBlessingsSection({
             <motion.div
               key={blessing.id}
               className="flex-shrink-0"
-              initial={{ opacity: 0, y: 18 }}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ type: 'spring', stiffness: 75, damping: 20, delay: index * 0.06 }}
@@ -155,7 +155,7 @@ export default function EnergyBlessingsSection({
             <motion.div
               key={blessing.id}
               className="flex-shrink-0"
-              initial={{ opacity: 0, y: 14 }}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-20px' }}
               transition={{ type: 'spring', stiffness: 75, damping: 20, delay: index * 0.05 }}

@@ -114,7 +114,7 @@ export default function SelfAssessmentSection({ onProgramClick, programProgress 
             <motion.div
               key={p.id}
               className="flex-shrink-0"
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ type: 'spring', stiffness: 80, damping: 20, delay: index * 0.08 }}
@@ -139,7 +139,7 @@ export default function SelfAssessmentSection({ onProgramClick, programProgress 
             <motion.div
               key={p.id}
               className="flex-shrink-0"
-              initial={{ opacity: 0, y: 16 }}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-20px' }}
               transition={{ type: 'spring', stiffness: 80, damping: 20, delay: index * 0.07 }}

@@ -17,7 +17,8 @@ function getContextualMessage(firstName: string): string {
   else if (hour >= 12 && hour < 18) greeting = 'Boa tarde';
   else greeting = 'Boa noite';
 
-  return `${greeting}, ${firstName}! Se precisar fazer uma pausa, estou aqui para conversar.`;
+  const saudacao = firstName ? `${greeting}, ${firstName}!` : `${greeting}!`;
+  return `${saudacao} Se precisar fazer uma pausa, estou aqui para conversar.`;
 }
 
 export default function EcoAIGuidanceCard({
@@ -50,7 +51,7 @@ export default function EcoAIGuidanceCard({
       <motion.button
         onClick={onStartChat}
         className="group flex w-full max-w-md items-center gap-3 rounded-[26px] py-4 pl-3 pr-4 text-left"
-        initial={{ opacity: 0, y: 24 }}
+        initial={false}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.1 }}

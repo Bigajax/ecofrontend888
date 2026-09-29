@@ -51,7 +51,7 @@ export default function DailyRecommendationsSection({
       <motion.div
         className="rounded-2xl bg-white overflow-hidden"
         style={{ border: '1px solid rgba(13,27,42,0.07)', boxShadow: '0 4px 18px rgba(13,27,42,0.05)' }}
-        initial="hidden"
+        initial={false}
         whileInView="visible"
         viewport={{ once: true, margin: '-60px' }}
         variants={{ visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } } }}

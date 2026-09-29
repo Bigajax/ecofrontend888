@@ -25,7 +25,7 @@ export default function EcoAIRecommendationCard({ onStartChat }: EcoAIRecommenda
     <section className="mx-auto max-w-6xl px-4 py-4 md:px-8 md:py-5">
       <motion.div
         className="grid grid-cols-2 gap-3 md:grid-cols-4"
-        initial="hidden"
+        initial={false}
         whileInView="visible"
         viewport={{ once: true, margin: '-40px' }}
         variants={{ visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } } }}

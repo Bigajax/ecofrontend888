@@ -101,7 +101,7 @@ export default function LearnExploreSection({
       {/* Content Grid */}
       <motion.div
         className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
-        initial="hidden"
+        initial={false}
         whileInView="visible"
         viewport={{ once: true, margin: '-60px' }}
         variants={{ visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } } }}

@@ -1,9 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
 import ContinueProgramSection from '@/components/home/ContinueProgramSection';
@@ -11,11 +9,9 @@ import EnergyBlessingsSection from '@/components/home/EnergyBlessingsSection';
 import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
 import EcoDreamGuidanceCard from '@/components/home/EcoDreamGuidanceCard';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
-import HeroCarousel from '@/components/home/HeroCarousel';
-import LiveReflectionSection from '@/components/home/LiveReflectionSection';
+import HomeReinoHero from '@/components/home/HomeReinoHero';
 import SelfAssessmentSection from '@/components/home/SelfAssessmentSection';
 import PromoSection from '@/components/home/PromoSection';
-import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
 import HomePageTour from '@/components/HomePageTour';
@@ -26,47 +22,6 @@ import { usePremiumContent } from '@/hooks/usePremiumContent';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
 import { trackDiarioEnteredFromExplore } from '@/lib/mixpanelDiarioEvents';
 
-interface DailyMaxim {
-  date: string;
-  dayNumber: number;
-  title: string;
-  text: string;
-  author: string;
-  background?: string;
-}
-
-const ALL_DAILY_MAXIMS: DailyMaxim[] = [
-  {
-    date: 'Novembro 19',
-    dayNumber: 19,
-    title: 'MÁXIMAS DE TRÊS HOMENS SÁBIOS',
-    text: 'Para qualquer desafio, deveríamos ter três pensamentos ao nosso dispor: "Conduzam Deus e Destino, Para aquela Meta fixada para mim há muito. Seguirei e não tropeçarei; mesmo que minha vontade seja fraca, eu me manterei firme."',
-    author: 'CLEANTES',
-    background: 'url("/images/meditacao-19-nov.webp")',
-  },
-  {
-    date: 'Novembro 20',
-    dayNumber: 20,
-    title: 'A VIRTUDE É O ÚNICO BEM',
-    text: 'A virtude é a única coisa que permanece com você em todas as circunstâncias da vida.',
-    author: 'EPICTETO',
-    background: 'url("https://images.unsplash.com/photo-1469022563149-aa64dbd37dae?w=1000&h=600&fit=crop")',
-  },
-  {
-    date: 'Novembro 21',
-    dayNumber: 21,
-    title: 'SOBRE A MORTE',
-    text: 'A morte não é um mal, pois os males são coisas que prejudicam.',
-    author: 'MARCOS AURÉLIO',
-    background: 'url("https://images.unsplash.com/photo-1470252649378-9c29740ff023?w=1000&h=600&fit=crop")',
-  },
-];
-
-const getAvailableMaxims = (): DailyMaxim[] => {
-  const today = new Date().getDate();
-  return ALL_DAILY_MAXIMS.filter(maxim => maxim.dayNumber <= today);
-};
-
 export default function HomePage() {
   const { userName, isGuestMode, user } = useAuth();
   const { startProgram } = useProgram();
@@ -74,9 +29,6 @@ export default function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showDiarioModal, setShowDiarioModal] = useState(false);
-  const [diarioSelectedIndex, setDiarioSelectedIndex] = useState(0);
-  const [diarioExpanded, setDiarioExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showEcoAIModal, setShowEcoAIModal] = useState(false);
 
@@ -136,24 +88,13 @@ export default function HomePage() {
       .join(' ');
   };
 
-  // Obter saudação baseada no horário de Brasília
-  const getGreeting = () => {
-    const now = new Date();
-    // Converter para horário de Brasília (UTC-3)
-    const brasiliaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
-    const hour = brasiliaTime.getHours();
+  // Prévia dos humores só em dev: /app?humor=amanhecer|entardecer|noite
+  const humorParam = import.meta.env.DEV ? new URLSearchParams(location.search).get('humor') : null;
+  const previewMood =
+    humorParam === 'amanhecer' || humorParam === 'entardecer' || humorParam === 'noite' ? humorParam : undefined;
 
-    if (hour >= 5 && hour < 12) {
-      return 'Bom dia';
-    } else if (hour >= 12 && hour < 18) {
-      return 'Boa tarde';
-    } else {
-      return 'Boa noite';
-    }
-  };
-
-  const greeting = getGreeting();
-  const displayName = capitalizeNames(userName || 'Convidado(a)');
+  // Sem nome (convidado) fica vazio: a home nunca mostra "Convidado(a)".
+  const displayName = capitalizeNames(userName || '');
 
   const handleLogout = async () => {
     navigate('/');
@@ -206,8 +147,8 @@ export default function HomePage() {
         title: 'Desperte seu potencial interior',
         description: '5 meditações · aprox. 40 min',
         duration: '5 meditações',
-        image: 'url("/images/capa-dr-joe-dispenza.webp")',
-        imagePosition: 'center 20%',
+        image: 'url("/images/reino/capa-desperte.webp")',
+        imagePosition: '22% center', // mantém no quadro a pessoa com a lanterna
         isPremium: false,
         category: 'Dr. Joe Dispenza',
         progress: programProgressList.find(p => p.programId === 'drjoe')?.progress ?? 0,
@@ -540,117 +481,43 @@ export default function HomePage() {
           <TrialOnboarding />
         </div>
 
-        {/* Hero Section */}
-        <div className="mx-auto max-w-6xl md:px-8 md:py-8">
-          {/* Desktop: Grid 2 colunas com mesma altura */}
-          <div className="hidden gap-6 md:grid md:grid-cols-2">
-            {/* Left Card - Greeting */}
-            <motion.div
-              className="flex flex-col justify-center rounded-3xl p-9 md:h-[320px] relative overflow-hidden"
-              initial={{ opacity: 0, y: 24, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.15 }}
-              style={{
-                backgroundColor: 'var(--surface-card)',
-                boxShadow: 'var(--shadow-card)',
-                border: '1px solid var(--neutral-border)',
-              }}
-            >
-              {/* Large decorative orb top-right */}
-              <div style={{
-                position: 'absolute', top: -70, right: -70,
-                width: 240, height: 240, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(10,107,191,0.07) 0%, transparent 65%)',
-                pointerEvents: 'none',
-              }} />
-              {/* Small orb bottom-left */}
-              <div style={{
-                position: 'absolute', bottom: -40, left: -20,
-                width: 140, height: 140, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(10,107,191,0.05) 0%, transparent 65%)',
-                pointerEvents: 'none',
-              }} />
-              {/* Subtle greeting label */}
-              <p className="text-[11px] font-bold text-[#0A6BBF]/60 relative tracking-[0.18em] uppercase mb-1">
-                {greeting}
-              </p>
-              <h1 className="font-display text-[38px] font-bold leading-tight relative" style={{ color: '#0D3461' }}>
-                {displayName}
-              </h1>
-              <div className="mt-4 h-[1px] w-12 relative" style={{ background: 'linear-gradient(90deg, #0A6BBF, transparent)' }} />
-              <p className="eco-subtitle mt-4 text-[19px] relative leading-snug" style={{ color: '#1A3A5C' }}>
-                O que está pesando no seu coração hoje?
-              </p>
-              <p className="mt-2 text-[14px] relative" style={{ color: '#5A8AAD' }}>
-                A Eco está aqui para ouvir, sem julgar.
-              </p>
-              <button
-                onClick={handleStartChat}
-                className="mt-7 inline-flex items-center gap-2.5 justify-center self-start rounded-full bg-eco-baby px-7 py-3.5 text-[15px] font-bold text-white transition-all duration-300 hover:bg-eco-baby/90 hover:scale-105 active:scale-95 relative min-h-[48px]"
-                style={{
-                  boxShadow: '0 6px 24px rgba(110,200,255,0.35), 0 2px 8px rgba(110,200,255,0.20)',
-                }}
-              >
-                Conversar com a Eco
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </button>
-            </motion.div>
-
-            {/* Right Card - Hero Carousel */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.28 }}
-            >
-              <HeroCarousel />
-            </motion.div>
-          </div>
-
-          {/* Mobile: Diário Estoico Card */}
-          <motion.div
-            className="block md:hidden"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.1 }}
-          >
-            <HeroCarousel
-              variant="mobile"
-              userName={displayName}
-              onStartChat={handleStartChat}
-            />
-          </motion.div>
-        </div>
+        {/* Topo do reino: paisagem, pergunta e sumário mudam com a hora */}
+        <HomeReinoHero
+          mood={previewMood}
+          userName={userName}
+          onStartChat={handleStartChat}
+          onDailyRecommendation={handleDailyRecommendationClick}
+          onBlessing={handleEnergyBlessingClick}
+        />
 
         {/* Continue o seu programa — só aparece se houver programa em andamento */}
         {programProgressList.some((p) => p.status === 'in_progress') && (
-          <AnimatedSection animation="slide-up-fade" id="continue-program-section">
+          <section id="continue-program-section">
             <ContinueProgramSection
               programs={programProgressList}
               onContinue={handleContinueProgram}
             />
-          </AnimatedSection>
+          </section>
         )}
 
         {/* Daily Recommendations Section */}
-        <AnimatedSection animation="slide-up-fade" id="daily-recommendations-section">
+        <section id="daily-recommendations-section">
           <DailyRecommendationsSection
             recommendations={dailyRecommendations}
             onRecommendationClick={handleDailyRecommendationClick}
           />
-        </AnimatedSection>
+        </section>
 
         {/* Energy Blessings Section */}
-        <AnimatedSection animation="slide-up-fade" id="energy-blessings-section">
+        <section id="energy-blessings-section">
           <EnergyBlessingsSection
             blessings={energyBlessings}
             onBlessingClick={handleEnergyBlessingClick}
           />
-        </AnimatedSection>
+        </section>
 
         {/* Programas Section */}
-        <AnimatedSection animation="slide-up-fade" id="self-assessment-section">
+        <section id="self-assessment-section">
           <SelfAssessmentSection
             programProgress={programProgressMap}
             onProgramClick={(id) => {
@@ -684,24 +551,24 @@ export default function HomePage() {
               }
             }}
           />
-        </AnimatedSection>
+        </section>
 
         {/* ECO AI Guidance Card Section */}
-        <AnimatedSection animation="slide-up-fade" id="eco-ai-guidance">
+        <section id="eco-ai-guidance">
           <EcoAIGuidanceCard
             userName={displayName}
             totalSessions={programProgressList.reduce((acc, p) => acc + p.completedSessions, 0)}
             onStartChat={handleStartChat}
           />
-        </AnimatedSection>
+        </section>
 
         {/* Eco Dream Guidance Card Section */}
-        <AnimatedSection animation="slide-up-fade" id="eco-dream-guidance">
+        <section id="eco-dream-guidance">
           <EcoDreamGuidanceCard />
-        </AnimatedSection>
+        </section>
 
         {/* Learn & Explore Section */}
-        <AnimatedSection animation="slide-up-fade" id="learn-explore-section">
+        <section id="learn-explore-section">
           <LearnExploreSection
             categories={categories}
             contentItems={filteredContent}
@@ -709,17 +576,13 @@ export default function HomePage() {
             onCategoryChange={setSelectedCategory}
             onContentClick={handleContentClick}
           />
-        </AnimatedSection>
+        </section>
 
         {/* Promo 50% OFF */}
-        <AnimatedSection animation="slide-up-fade" id="promo-section">
+        <section id="promo-section">
           <PromoSection onUpgradeClick={() => requestUpgrade('home_promo_50off')} />
-        </AnimatedSection>
+        </section>
 
-        {/* Live Reflection Section */}
-        <AnimatedSection animation="slide-up-fade" id="live-reflection-section">
-          <LiveReflectionSection />
-        </AnimatedSection>
 
         {/* Footer spacing */}
         <div className="h-20" />

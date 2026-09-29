@@ -79,7 +79,7 @@ export default function ContinueProgramSection({
 
       <motion.div
         className="flex flex-col gap-3"
-        initial="hidden"
+        initial={false}
         whileInView="visible"
         viewport={{ once: true, margin: '-60px' }}
         variants={{ visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } } }}
