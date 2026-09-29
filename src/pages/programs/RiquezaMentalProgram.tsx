@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Check, Loader2 } from 'lucide-react';
 import { useProgram } from '@/contexts/ProgramContext';
 import { useAuth } from '@/contexts/AuthContext';
 import HomeHeader from '@/components/home/HomeHeader';
-import RiquezaMentalProgressBar from '@/components/programs/RiquezaMentalProgressBar';
+import ReinoChegada from '@/components/reino/ReinoChegada';
 import RiquezaMentalStep1 from '@/components/programs/steps/RiquezaMentalStep1';
 import RiquezaMentalStep2 from '@/components/programs/steps/RiquezaMentalStep2';
 import RiquezaMentalStep3 from '@/components/programs/steps/RiquezaMentalStep3';
@@ -264,128 +263,53 @@ export default function RiquezaMentalProgram() {
     }
   };
 
+  const salvo =
+    user && ongoingProgram?.enrollmentId ? (
+      <span className="reino-sono__contagem" role="status">
+        {saveStatus === 'saving' ? 'Salvando…' : saveStatus === 'saved' ? 'Salvo' : ''}
+      </span>
+    ) : !user ? (
+      <button type="button" className="reino-chegada__voltar" onClick={() => navigate('/register')}>
+        Criar conta grátis
+      </button>
+    ) : undefined;
+
   return (
-    <div className="min-h-screen bg-eco-bg font-primary">
-      {/* Header - apenas se usuário logado */}
+    <div className="reino-corpo page-with-nav" style={{ minHeight: '100dvh' }}>
       {user && <HomeHeader />}
 
-      {/* Navegação */}
-      <div className="w-full px-4 pt-6 md:px-8">
-        <div className="mx-auto max-w-2xl flex items-center justify-between">
-          {/* Left side: Botão Voltar + Save Status */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleBack}
-              className="inline-flex items-center justify-center w-10 h-10 text-eco-text
-                         glass-shell rounded-full hover:bg-eco-accent/10
-                         transition-all duration-300 shadow-minimal hover:shadow-eco"
-              aria-label="Voltar"
-            >
-              <ChevronLeft size={20} />
-            </button>
+      <ReinoChegada
+        mood="entardecer"
+        imagem="/images/reino/capa-quem-pensa.webp"
+        foco="center 65%"
+        lugar="TRI.04 · As Trilhas · 6 passos"
+        titulo="Quem Pensa Enriquece"
+        sobre="Transforme seu mindset financeiro, um passo de cada vez, com calma e por escrito."
+        voltar={{ rotulo: 'Voltar', onClick: handleBack }}
+        extra={salvo}
+        progresso={
+          activeTab === 'program'
+            ? { valor: (currentStep + 1) / TOTAL_STEPS, legenda: `Passo ${currentStep + 1} de ${TOTAL_STEPS}` }
+            : undefined
+        }
+      />
 
-            {/* Save Status Indicator (only for authenticated users) */}
-            {user && ongoingProgram?.enrollmentId && (
-              <div className="flex items-center gap-2 text-xs text-eco-muted">
-                {saveStatus === 'saving' && (
-                  <>
-                    <Loader2 size={14} className="animate-spin" />
-                    <span>Salvando...</span>
-                  </>
-                )}
-                {saveStatus === 'saved' && (
-                  <>
-                    <Check size={14} className="text-eco-accent" />
-                    <span className="text-eco-accent">Salvo</span>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* CTA para guest */}
-          {!user && (
-            <button
-              onClick={() => navigate('/register')}
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold
-                         text-white bg-eco-baby rounded-full hover:bg-eco-baby/90
-                         hover:scale-105 active:scale-95 transition-all duration-200"
-            >
-              Criar conta grátis
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Título e Subtítulo */}
-      <div className="w-full px-4 pt-6 md:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-eco-text mb-2">
-            QUEM PENSA ENRIQUECE
-          </h1>
-          <p className="font-primary text-sm md:text-base lg:text-lg font-medium tracking-wider text-eco-muted">
-            TRANSFORME SEU MINDSET FINANCEIRO
-          </p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="w-full px-4 pt-6 md:px-8">
-        <div className="mx-auto max-w-2xl">
-          <div className="glass-shell rounded-2xl p-2 inline-flex gap-2">
-            <button
-              onClick={() => setActiveTab('program')}
-              className={`px-6 py-2.5 rounded-xl font-primary font-medium text-sm transition-all duration-200 ${
-                activeTab === 'program'
-                  ? 'bg-eco-baby text-white shadow-minimal'
-                  : 'text-eco-muted hover:text-eco-text hover:bg-eco-accent/5'
-              }`}
-            >
-              Programa
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('history');
-                // Refresh history when switching to this tab
-                setHistoryRefreshTrigger(prev => prev + 1);
-              }}
-              className={`px-6 py-2.5 rounded-xl font-primary font-medium text-sm transition-all duration-200 ${
-                activeTab === 'history'
-                  ? 'bg-eco-baby text-white shadow-minimal'
-                  : 'text-eco-muted hover:text-eco-text hover:bg-eco-accent/5'
-              }`}
-            >
-              Minhas Sessões
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal de Confirmação de Saída */}
       {showExitModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="glass-shell rounded-3xl p-8 max-w-md w-full shadow-eco">
-            <h3 className="font-display text-2xl text-eco-text mb-4 font-medium">
+        <div className="reino-drjoe__ciclo" role="dialog" aria-modal="true" aria-labelledby="riqueza-sair">
+          <div className="reino-drjoe__ciclo-caixa">
+            <h2 id="riqueza-sair" className="reino-corpo__titulo" style={{ color: '#1c2350', fontSize: 26 }}>
               Deseja sair da sessão?
-            </h3>
-            <p className="font-primary text-eco-muted mb-6 leading-relaxed">
+            </h2>
+            <p className="reino-corpo__sobre" style={{ color: '#4b5070' }}>
               {user && ongoingProgram?.enrollmentId
-                ? 'Suas respostas foram salvas automaticamente. Você pode retomar de onde parou a qualquer momento.'
-                : 'Seu progresso não será salvo. Você precisará recomeçar do início na próxima vez.'}
+                ? 'Suas respostas foram salvas. Você pode retomar de onde parou a qualquer momento.'
+                : 'Seu progresso não será salvo. Na próxima vez, você recomeça do início.'}
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowExitModal(false)}
-                className="flex-1 px-4 py-3 glass-shell text-eco-text rounded-xl font-primary font-medium
-                         hover:bg-eco-accent/5 transition-all duration-200"
-              >
-                Continuar sessão
+            <div className="reino-player-aviso__acoes" style={{ padding: 0, background: 'transparent' }}>
+              <button type="button" className="reino-placa" onClick={() => setShowExitModal(false)}>
+                Continuar a sessão
               </button>
-              <button
-                onClick={handleConfirmExit}
-                className="flex-1 px-4 py-3 bg-eco-baby text-white rounded-xl font-primary font-medium
-                         hover:bg-eco-baby/90 transition-all duration-200 active:scale-95"
-              >
+              <button type="button" className="reino-chegada__voltar" onClick={handleConfirmExit}>
                 {user && ongoingProgram?.enrollmentId ? 'Sair' : 'Sair mesmo assim'}
               </button>
             </div>
@@ -393,40 +317,50 @@ export default function RiquezaMentalProgram() {
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-2xl px-4 py-4 md:px-8 md:py-8">
+      <main className="reino-pagina">
+        <div className="reino-filtros" role="tablist" aria-label="Quem Pensa Enriquece">
+          <button
+            type="button"
+            role="tab"
+            className="reino-filtro"
+            aria-pressed={activeTab === 'program'}
+            aria-selected={activeTab === 'program'}
+            onClick={() => setActiveTab('program')}
+          >
+            Programa
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className="reino-filtro"
+            aria-pressed={activeTab === 'history'}
+            aria-selected={activeTab === 'history'}
+            onClick={() => {
+              setActiveTab('history');
+              setHistoryRefreshTrigger((prev) => prev + 1);
+            }}
+          >
+            Minhas sessões
+          </button>
+        </div>
+
         {activeTab === 'program' ? (
           <>
-            {/* Progress Bar */}
-            <div className="mb-8">
-              <RiquezaMentalProgressBar currentStep={currentStep} totalSteps={TOTAL_STEPS} />
-            </div>
-
-            {/* Step Content */}
-            <div className="mb-8">
-              {renderStep()}
-            </div>
-
-            {/* Navigation Button */}
-            <div className="flex justify-center">
-              <button
-                onClick={currentStep === TOTAL_STEPS - 1 ? handleComplete : handleNext}
-                disabled={isCompleting}
-                className="rounded-2xl bg-eco-baby px-8 py-3 font-primary font-semibold text-white
-                         transition-all duration-200 hover:bg-eco-baby/90 hover:shadow-eco
-                         active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
-                         shadow-minimal"
-              >
-                {isCompleting ? 'Concluindo...' : currentStep === TOTAL_STEPS - 1 ? 'Concluir sessão' : 'Próximo →'}
-              </button>
-            </div>
+            <div style={{ margin: '24px 0 32px' }}>{renderStep()}</div>
+            <button
+              type="button"
+              className="reino-placa"
+              onClick={currentStep === TOTAL_STEPS - 1 ? handleComplete : handleNext}
+              disabled={isCompleting}
+            >
+              {isCompleting ? 'Concluindo…' : currentStep === TOTAL_STEPS - 1 ? 'Concluir a sessão' : 'Próximo passo'}{' '}
+              <span aria-hidden="true">→</span>
+            </button>
           </>
         ) : (
-          /* History Tab */
-          <RiquezaMentalHistory
-            currentEnrollmentId={ongoingProgram?.enrollmentId}
-            refreshTrigger={historyRefreshTrigger}
-          />
+          <div style={{ marginTop: 24 }}>
+            <RiquezaMentalHistory currentEnrollmentId={ongoingProgram?.enrollmentId} refreshTrigger={historyRefreshTrigger} />
+          </div>
         )}
       </main>
     </div>

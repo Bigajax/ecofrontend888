@@ -5,11 +5,11 @@ interface Step4Props {
 
 export default function RiquezaMentalStep4({ answers, onAnswerChange }: Step4Props) {
   return (
-    <div className="space-y-8 rounded-3xl glass-shell p-8 md:p-10 shadow-eco">
+    <div className="space-y-8">
       {/* Badge */}
       <div>
-        <span className="inline-flex rounded-full px-4 py-1.5 bg-eco-baby">
-          <span className="text-[11px] font-semibold text-white tracking-wide">
+        <span className="inline-flex">
+          <span className="reino-rotulo text-eco-muted">
             PASSO 4 DE 6
           </span>
         </span>
@@ -31,7 +31,7 @@ export default function RiquezaMentalStep4({ answers, onAnswerChange }: Step4Pro
           Precisa de algo verdadeiro o suficiente para você hoje,<br />
           e alinhado com quem você quer se tornar.
         </p>
-        <div className="bg-eco-baby/10 border border-eco-baby/30 rounded-xl p-5 mt-4">
+        <div className="border-l-[3px] border-[#EDB85A] pl-4 py-1 mt-4">
           <p className="text-sm text-eco-text mb-2">
             <span className="font-medium">Formato sugerido:</span>
           </p>

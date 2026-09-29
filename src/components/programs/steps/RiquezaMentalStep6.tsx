@@ -71,11 +71,11 @@ ${answers?.step5_commitment || '(não respondido)'}
 
 export default function RiquezaMentalStep6({ answers, onAnswerChange }: Step6Props) {
   return (
-    <div className="space-y-8 rounded-3xl glass-shell p-8 md:p-10 shadow-eco">
+    <div className="space-y-8">
       {/* Badge */}
       <div>
-        <span className="inline-flex rounded-full px-4 py-1.5 bg-eco-baby">
-          <span className="text-[11px] font-semibold text-white tracking-wide">
+        <span className="inline-flex">
+          <span className="reino-rotulo text-eco-muted">
             PASSO 6 DE 6
           </span>
         </span>
@@ -99,7 +99,7 @@ export default function RiquezaMentalStep6({ answers, onAnswerChange }: Step6Pro
         </p>
 
         <div className="text-center">
-          <p className="text-lg font-display font-medium text-eco-text bg-eco-baby/10 rounded-xl p-5 border border-eco-baby/30">
+          <p className="text-lg font-display font-medium text-eco-text border-l-[3px] border-[#EDB85A] pl-4 py-1">
             Não é sobre pressa. É sobre direção.
           </p>
           <p className="text-sm text-eco-muted mt-3">

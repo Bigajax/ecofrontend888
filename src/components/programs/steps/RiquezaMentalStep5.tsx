@@ -31,11 +31,11 @@ export default function RiquezaMentalStep5({ answers, onAnswerChange }: Step5Pro
   };
 
   return (
-    <div className="space-y-8 rounded-3xl glass-shell p-8 md:p-10 shadow-eco">
+    <div className="space-y-8">
       {/* Badge */}
       <div>
-        <span className="inline-flex rounded-full px-4 py-1.5 bg-eco-baby">
-          <span className="text-[11px] font-semibold text-white tracking-wide">
+        <span className="inline-flex">
+          <span className="reino-rotulo text-eco-muted">
             PASSO 5 DE 6
           </span>
         </span>
@@ -53,11 +53,11 @@ export default function RiquezaMentalStep5({ answers, onAnswerChange }: Step5Pro
         <p>
           Mudança não acontece no futuro distante. Acontece nos próximos dias.
         </p>
-        <div className="font-medium text-eco-text bg-eco-baby/10 rounded-xl p-4 border border-eco-baby/20">
+        <div className="font-medium text-eco-text border-l-[3px] border-[#EDB85A] pl-4 py-1">
           <p>Pequenas ações repetidas &gt; grandes planos abandonados</p>
         </div>
         <p className="text-sm text-eco-muted">
-          Foco é consistência, não perfeição. Escolha no máximo <span className="font-medium text-eco-baby">3 ações</span> — pequenas o suficiente para você realmente cumprir.
+          Foco é consistência, não perfeição. Escolha no máximo <span className="font-medium text-eco-baby">3 ações</span>, pequenas o suficiente para você realmente cumprir.
         </p>
       </div>
 

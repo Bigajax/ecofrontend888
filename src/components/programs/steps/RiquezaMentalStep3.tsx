@@ -5,11 +5,11 @@ interface Step3Props {
 
 export default function RiquezaMentalStep3({ answers, onAnswerChange }: Step3Props) {
   return (
-    <div className="space-y-8 rounded-3xl glass-shell p-8 md:p-10 shadow-eco">
+    <div className="space-y-8">
       {/* Badge */}
       <div>
-        <span className="inline-flex rounded-full px-4 py-1.5 bg-eco-baby">
-          <span className="text-[11px] font-semibold text-white tracking-wide">
+        <span className="inline-flex">
+          <span className="reino-rotulo text-eco-muted">
             PASSO 3 DE 6
           </span>
         </span>

@@ -5,11 +5,11 @@ interface Step2Props {
 
 export default function RiquezaMentalStep2({ answers, onAnswerChange }: Step2Props) {
   return (
-    <div className="space-y-8 rounded-3xl glass-shell p-8 md:p-10 shadow-eco">
+    <div className="space-y-8">
       {/* Badge */}
       <div>
-        <span className="inline-flex rounded-full px-4 py-1.5 bg-eco-baby">
-          <span className="text-[11px] font-semibold text-white tracking-wide">
+        <span className="inline-flex">
+          <span className="reino-rotulo text-eco-muted">
             PASSO 2 DE 6
           </span>
         </span>
@@ -30,10 +30,10 @@ export default function RiquezaMentalStep2({ answers, onAnswerChange }: Step2Pro
         <p>
           Pense em você daqui a 3 anos. As coisas deram certo. Como está a sua vida financeira nessa versão de você?
         </p>
-        <div className="bg-eco-baby/10 border border-eco-baby/30 rounded-xl p-4 mt-4">
+        <div className="border-l-[3px] border-[#EDB85A] pl-4 py-1 mt-4">
           <p className="text-sm text-eco-text leading-relaxed">
             <span className="font-medium">💡 Importante:</span> Um desejo vago não orienta decisões.
-            Pense em <span className="font-medium text-eco-baby">tranquilidade, segurança, controle ou liberdade</span> — não em números fantasiosos sem base emocional.
+            Pense em <span className="font-medium text-eco-baby">tranquilidade, segurança, controle ou liberdade</span>, não em números fantasiosos sem base emocional.
           </p>
         </div>
       </div>
