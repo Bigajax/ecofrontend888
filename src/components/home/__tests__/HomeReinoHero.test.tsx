@@ -86,9 +86,9 @@ describe('HomeReinoHero', () => {
     expect(h.onBlessing).toHaveBeenCalledWith('drjoe_collection');
   });
 
-  it('os lugares por perto levam às regiões', () => {
+  it('o índice fixo leva às áreas pelo nome simples', () => {
     render(<HomeReinoHero userName="Rafael" mood="noite" {...handlers()} />);
-    fireEvent.click(screen.getByRole('button', { name: /Lago dos Sonhos/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Entender um sonho/ }));
     expect(navigate).toHaveBeenCalledWith('/app/dream');
   });
 });

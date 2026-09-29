@@ -6,7 +6,6 @@ import { trackRitualCardClicked, trackRitualCardViewed } from '@/lib/mixpanelRit
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import { PincelProgresso, ReinoPintura, ReinoScene, type ReinoCrop, type ReinoRegiao } from '@/components/reino/ReinoScene';
 import { formatHojeLabel, getFirstName, getReinoMood, type ReinoMood } from '@/components/reino/reinoMood';
-import { PARA_QUE_SERVE } from '@/components/reino/lugares';
 import '@/components/reino/reino.css';
 
 const RITUAL_SOURCE = 'home_reino';
@@ -31,10 +30,13 @@ interface ItemSumario {
   onClick: () => void;
 }
 
-interface Lugar {
-  id: keyof typeof PARA_QUE_SERVE;
-  nome: string;
-  codigo: string;
+/** Uma das 5 áreas do app, no índice fixo do fim do topo. */
+interface Area {
+  id: string;
+  /** o que é, em palavras de todo dia: vem primeiro */
+  titulo: string;
+  /** o nome do lugar no reino: vem pequeno, embaixo */
+  lugar: string;
   crop: ReinoCrop;
   onClick: () => void;
 }
@@ -128,7 +130,7 @@ export default function HomeReinoHero({
 
   const conteudo: Record<
     ReinoMood,
-    { ola: string; pergunta: string; placa: string; onPlaca: () => void; secao: string; itens: ItemSumario[]; lugares: Lugar[] }
+    { ola: string; pergunta: string; placa: string; onPlaca: () => void; secao: string; itens: ItemSumario[] }
   > = {
     amanhecer: {
       ola: nome ? `Bom dia, ${nome}.` : 'Bom dia.',
@@ -153,11 +155,6 @@ export default function HomeReinoHero({
         },
         conversar,
       ],
-      lugares: [
-        { id: 'lago', nome: 'Lago dos Sonhos', codigo: 'DRM.03', crop: [792, 190, 460, 460], onClick: irSonhos },
-        { id: 'trilhas', nome: 'As Trilhas', codigo: 'TRI.04', crop: [1252, 190, 460, 460], onClick: irTrilhas },
-        { id: 'portico', nome: 'O Pórtico', codigo: 'STO.05', crop: [1712, 190, 460, 460], onClick: abrirDiario },
-      ],
     },
     entardecer: {
       ola: 'O dia está baixando.',
@@ -175,11 +172,6 @@ export default function HomeReinoHero({
           meta: '5 meditações',
           onClick: () => onBlessing('drjoe_collection'),
         },
-      ],
-      lugares: [
-        { id: 'casa', nome: 'Casa da Eco', codigo: 'ECO.01', crop: [0, 190, 460, 460], onClick: onStartChat },
-        { id: 'vale', nome: 'Vale do Sono', codigo: 'SOM.02', crop: [460, 190, 460, 460], onClick: irSono },
-        { id: 'lago', nome: 'Lago dos Sonhos', codigo: 'DRM.03', crop: [920, 190, 460, 460], onClick: irSonhos },
       ],
     },
     noite: {
@@ -206,15 +198,20 @@ export default function HomeReinoHero({
           onClick: () => onBlessing('blessing_8'),
         },
       ],
-      lugares: [
-        { id: 'vale', nome: 'Vale do Sono', codigo: 'SOM.02', crop: [430, 190, 460, 460], onClick: irSono },
-        { id: 'lago', nome: 'Lago dos Sonhos', codigo: 'DRM.03', crop: [890, 190, 460, 460], onClick: irSonhos },
-        { id: 'trilhas', nome: 'As Trilhas', codigo: 'TRI.04', crop: [1350, 190, 460, 460], onClick: irTrilhas },
-      ],
     },
   };
 
   const c = conteudo[mood];
+
+  // Índice fixo: as 5 áreas, sempre as mesmas e na mesma ordem, em qualquer hora.
+  // O nome simples vem primeiro; o nome do lugar no reino fica pequeno embaixo.
+  const areas: Area[] = [
+    { id: 'casa', titulo: 'Conversar com a Eco', lugar: 'Casa da Eco', crop: [0, 190, 460, 460], onClick: onStartChat },
+    { id: 'vale', titulo: 'Dormir melhor', lugar: 'Vale do Sono', crop: [430, 190, 460, 460], onClick: irSono },
+    { id: 'lago', titulo: 'Entender um sonho', lugar: 'Lago dos Sonhos', crop: [880, 190, 460, 460], onClick: irSonhos },
+    { id: 'trilhas', titulo: 'Programas guiados', lugar: 'As Trilhas', crop: [1300, 190, 460, 460], onClick: irTrilhas },
+    { id: 'portico', titulo: 'Reflexão do dia', lugar: 'O Pórtico', crop: [1712, 190, 460, 460], onClick: abrirDiario },
+  ];
 
   return (
     <section className="reino-hero" data-mood={mood} aria-labelledby="reino-ola">
@@ -252,20 +249,25 @@ export default function HomeReinoHero({
           </ol>
         </div>
 
-        <div className="reino-hero__lugares">
-          <h2 className="reino-rotulo">Outros lugares do reino</h2>
-          <ul className="reino-horizonte">
-            {c.lugares.map((lugar, i) => (
-              <li key={lugar.id}>
-                <button type="button" onClick={lugar.onClick} className="reino-horizonte__lugar">
-                  <ReinoScene crop={lugar.crop} small className={i % 2 ? 'reino-rasgo-b' : 'reino-rasgo-a'} />
-                  <span className="reino-horizonte__nome">{lugar.nome}</span>
-                  <span className="reino-horizonte__serve">{PARA_QUE_SERVE[lugar.id]}</span>
+        <nav className="reino-hero__lugares" aria-labelledby="reino-indice">
+          <h2 id="reino-indice" className="reino-rotulo">Tudo o que tem aqui</h2>
+          <ul className="reino-indice">
+            {areas.map((area, i) => (
+              <li key={area.id}>
+                <button type="button" onClick={area.onClick} className="reino-indice__area">
+                  <ReinoScene crop={area.crop} small className={i % 2 ? 'reino-rasgo-b' : 'reino-rasgo-a'} />
+                  <span className="reino-indice__texto">
+                    <span className="reino-indice__titulo">{area.titulo}</span>
+                    <span className="reino-indice__lugar">{area.lugar}</span>
+                  </span>
+                  <span className="reino-indice__entrar" aria-hidden="true">
+                    entrar
+                  </span>
                 </button>
               </li>
             ))}
           </ul>
-        </div>
+        </nav>
       </div>
     </section>
   );
