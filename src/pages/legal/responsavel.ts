@@ -5,7 +5,7 @@
  * na página: nada de dado inventado.
  */
 export const RESPONSAVEL = {
-  nome: '',
+  nome: 'Rafael Razeira Barbon',
   documento: '',
   email: 'ecotopia.app777@gmail.com',
 };
