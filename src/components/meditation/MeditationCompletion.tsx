@@ -19,6 +19,7 @@ import DiarioEstoicoCard from '@/components/diario-estoico/DiarioEstoicoCard';
 import MeditationFeedback from '@/components/meditation/MeditationFeedback';
 import { trackDiarioViewedPostMeditation } from '@/lib/mixpanelDiarioEvents';
 import { useAuth } from '@/contexts/AuthContext';
+import '@/components/reino/reino.css';
 
 const BLUE_SOFT = 'rgba(148,136,196,0.12)';
 const BLUE_BORDER = 'rgba(148,136,196,0.28)';
@@ -44,17 +45,17 @@ const RELATED_BY_CATEGORY: Record<string, RelatedMeditation[]> = {
     { id: 'blessing_8', title: 'Meditação do Sono', duration: '15 min', imageUrl: '/images/reino/capa-adormeca.webp', audioUrl: '/audio/meditacao-sono.mp3', gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)', isPremium: true, category: 'sono', returnTo: '/app/programas' },
   ],
   dr_joe_dispenza: [
-    { id: 'blessing_2', title: 'Sintonize Novos Potenciais', duration: '5 min', imageUrl: '/images/meditacao-novos-potenciais.webp', audioUrl: '/audio/sintonizar-novos-potenciais-v3.mp3', gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #182864 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 1' },
-    { id: 'blessing_1', title: 'Bênção dos Centros de Energia', duration: '7 min', imageUrl: '/images/meditacao-bencao-energia.webp', audioUrl: '/audio/bencao-centros-energia.mp3', gradient: 'linear-gradient(to bottom, #F5C563 0%, #A63428 100%)', isPremium: false, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 2' },
-    { id: 'blessing_3', title: 'Recondicione Seu Corpo e Mente', duration: '7 min', imageUrl: '/images/meditacao-recondicionar.webp', audioUrl: '/audio/recondicione-corpo-mente.mp3', gradient: 'linear-gradient(to bottom, #9B79C9 0%, #3B2463 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 3' },
-    { id: 'blessing_5', title: 'Meditação Caminhando', duration: '5 min', imageUrl: '/images/meditacao-caminhando.webp', audioUrl: '/audio/meditacao-caminhando-nova.mp3', gradient: 'linear-gradient(to bottom right, #FF8C42 0%, #2D1B3D 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 4' },
-    { id: 'blessing_6', title: 'Espaço-Tempo, Tempo-Espaço', duration: '5 min', imageUrl: '/images/meditacao-espaco-tempo.webp', audioUrl: '/audio/espaco-tempo-completa.mp3', gradient: 'linear-gradient(to bottom, #FCD670 0%, #C43520 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 5' },
+    { id: 'blessing_2', title: 'Sintonize Novos Potenciais', duration: '5 min', imageUrl: '/images/reino/capa-desperte.webp', audioUrl: '/audio/sintonizar-novos-potenciais-v3.mp3', gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #182864 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 1' },
+    { id: 'blessing_1', title: 'Bênção dos Centros de Energia', duration: '7 min', imageUrl: '/images/reino/capa-desperte.webp', audioUrl: '/audio/bencao-centros-energia.mp3', gradient: 'linear-gradient(to bottom, #F5C563 0%, #A63428 100%)', isPremium: false, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 2' },
+    { id: 'blessing_3', title: 'Recondicione Seu Corpo e Mente', duration: '7 min', imageUrl: '/images/reino/capa-desperte.webp', audioUrl: '/audio/recondicione-corpo-mente.mp3', gradient: 'linear-gradient(to bottom, #9B79C9 0%, #3B2463 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 3' },
+    { id: 'blessing_5', title: 'Meditação Caminhando', duration: '5 min', imageUrl: '/images/reino/capa-desperte.webp', audioUrl: '/audio/meditacao-caminhando-nova.mp3', gradient: 'linear-gradient(to bottom right, #FF8C42 0%, #2D1B3D 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 4' },
+    { id: 'blessing_6', title: 'Espaço-Tempo, Tempo-Espaço', duration: '5 min', imageUrl: '/images/reino/capa-desperte.webp', audioUrl: '/audio/espaco-tempo-completa.mp3', gradient: 'linear-gradient(to bottom, #FCD670 0%, #C43520 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 5' },
   ],
   default: [
-    { id: 'blessing_7', title: 'Introdução à Meditação', duration: '8 min', imageUrl: '/images/meditacao-introducao.webp', audioUrl: '/audio/introducao-meditacao.mp3', gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #1F7BAD 100%)', isPremium: false, category: 'intro', returnTo: '/app/programas' },
+    { id: 'blessing_7', title: 'Introdução à Meditação', duration: '8 min', imageUrl: '/images/reino/capa-primeiros-passos.webp', audioUrl: '/audio/introducao-meditacao.mp3', gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #1F7BAD 100%)', isPremium: false, category: 'intro', returnTo: '/app/programas' },
     { id: 'blessing_10', title: 'Acolhendo sua respiração', duration: '7 min', imageUrl: '/images/reino/capa-respire.webp', audioUrl: '/audio/acolhendo-respiracao.mp3', gradient: 'linear-gradient(to bottom, #7BBFB5 0%, #084D42 100%)', isPremium: false, category: 'respiracao', returnTo: '/app/programas' },
     { id: 'blessing_11', title: 'Liberando o Estresse', duration: '5 min', imageUrl: '/images/reino/capa-solte.webp', audioUrl: '/audio/liberando-estresse.mp3', gradient: 'linear-gradient(to bottom, #C4A0E8 0%, #341870 100%)', isPremium: false, category: 'relaxamento', returnTo: '/app/programas' },
-    { id: 'blessing_1', title: 'Bênção dos Centros de Energia', duration: '7 min', imageUrl: '/images/meditacao-bencao-energia.webp', audioUrl: '/audio/bencao-centros-energia.mp3', gradient: 'linear-gradient(to bottom, #F5C563 0%, #A63428 100%)', isPremium: false, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
+    { id: 'blessing_1', title: 'Bênção dos Centros de Energia', duration: '7 min', imageUrl: '/images/reino/capa-desperte.webp', audioUrl: '/audio/bencao-centros-energia.mp3', gradient: 'linear-gradient(to bottom, #F5C563 0%, #A63428 100%)', isPremium: false, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
   ],
 };
 
@@ -200,6 +201,106 @@ export default function MeditationCompletion({
       reasons
     );
   };
+
+  // ── Conclusão no reino (todo mundo, menos o convidado da Noite 1 do funil) ──
+  if (!isSonoGuestLocked) {
+    return (
+      <div className="reino-corpo reino-conclusao" role="dialog" aria-modal="true" aria-labelledby="conclusao-titulo">
+        <div className="reino-conclusao__coluna">
+          <div className="reino-conclusao__topo">
+            <button type="button" className="reino-chegada__voltar" onClick={onDismiss}>
+              <span aria-hidden="true">←</span> Voltar
+            </button>
+            <p className="reino-rotulo">Sessão concluída</p>
+          </div>
+
+          <h1 id="conclusao-titulo" className="reino-conclusao__titulo">
+            Muito bem.
+          </h1>
+          <p className="reino-conclusao__sessao">{meditationTitle}</p>
+
+          {!streakLoading && currentStreak > 0 && (
+            <div className="reino-nota reino-conclusao__sequencia">
+              <p>
+                {currentStreak} {currentStreak === 1 ? 'dia seguido' : 'dias seguidos'} no reino.
+              </p>
+            </div>
+          )}
+
+          {showSonoJourney && sonoJourney && <SonoNightsJourney {...sonoJourney} />}
+
+          {!showSonoJourney && nextNight && (
+            <section className="reino-conclusao__bloco" aria-labelledby="conclusao-proxima">
+              <p className="reino-rotulo">SOM.02 · Próxima noite</p>
+              <h2 id="conclusao-proxima" className="reino-corpo__titulo" style={{ fontSize: 24 }}>
+                Noite {nextNight.nightNumber}: {nextNight.title}
+              </h2>
+              <p className="reino-corpo__sobre">{nextNight.description}</p>
+              <button type="button" className="reino-placa" onClick={nextNight.onPlay}>
+                {nextNight.isLocked ? `Desbloquear a Noite ${nextNight.nightNumber}` : `Ouvir a Noite ${nextNight.nightNumber}`}{' '}
+                <span aria-hidden="true">→</span>
+              </button>
+              <p className="reino-sono__contagem">{nextNight.duration}</p>
+            </section>
+          )}
+
+          {todayMaxim && (
+            <section className="reino-sonho__pagina reino-rasgo-a reino-conclusao__reflexao" aria-labelledby="conclusao-reflexao">
+              <p className="reino-rotulo">STO.05 · Do Pórtico, a reflexão de hoje</p>
+              <h2 id="conclusao-reflexao" className="reino-conclusao__maxima">
+                {todayMaxim.title}
+              </h2>
+              <p className="reino-conclusao__texto">{todayMaxim.text}</p>
+              <p className="reino-conclusao__autor">{todayMaxim.author}</p>
+              <button
+                type="button"
+                className="reino-chegada__voltar reino-conclusao__ler"
+                onClick={() => navigate('/app/diario-estoico')}
+              >
+                Ler a reflexão inteira <span aria-hidden="true">→</span>
+              </button>
+            </section>
+          )}
+
+          {!showSonoJourney && relatedMeditations.length > 0 && (
+            <section className="reino-conclusao__bloco" aria-labelledby="conclusao-continue">
+              <p className="reino-rotulo">Para depois</p>
+              <h2 id="conclusao-continue" className="reino-corpo__titulo" style={{ fontSize: 24 }}>
+                Continue a trilha
+              </h2>
+              <ul className="reino-estante reino-conclusao__estante">
+                {relatedMeditations.map((med, i) => (
+                  <li key={med.id}>
+                    <button type="button" className="reino-capa" onClick={() => handleNavigateToMeditation(med)}>
+                      <img src={med.imageUrl} alt="" loading="lazy" className={i % 2 ? 'reino-rasgo-b' : 'reino-rasgo-a'} />
+                      <span className="reino-capa__meta">
+                        {med.dayLabel ? `${med.dayLabel} · ` : ''}
+                        {med.duration}
+                        {med.isPremium ? ' · assinantes' : ''}
+                      </span>
+                      <span className="reino-capa__titulo">{med.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section className="reino-conclusao__bloco reino-conclusao__feedback" aria-label="Como foi a sessão">
+            <MeditationFeedback
+              meditationId={meditationId}
+              meditationTitle={meditationTitle}
+              meditationCategory={meditationCategory}
+              meditationDuration={meditationDuration}
+              sessionMetrics={sessionMetrics}
+              onFeedbackSubmitted={handleFeedbackSubmitted}
+              theme="dark"
+            />
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },

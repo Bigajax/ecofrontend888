@@ -1730,3 +1730,89 @@
   font: 400 12.5px var(--r-mono);
   color: #5b6080;
 }
+
+/* ===================== conclusão da meditação ===================== */
+.reino-conclusao {
+  --r-bg: #10153a;
+  --r-fg: #f4f1e8;
+  --r-fg2: rgba(244, 241, 232, 0.66);
+  --r-trilho: rgba(244, 241, 232, 0.22);
+  --r-placa-bg: var(--r-ocre);
+  --r-placa-fg: #10153a;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  background: var(--r-bg);
+  color: var(--r-fg);
+}
+.reino-conclusao__coluna {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 20px 64px;
+  display: grid;
+  gap: 18px;
+}
+.reino-conclusao__topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.reino-conclusao__titulo {
+  margin: 28px 0 0;
+  font: 400 clamp(44px, 9vw, 64px) / 1 var(--r-display);
+  color: var(--r-fg);
+}
+.reino-conclusao__sessao {
+  margin: 0;
+  font: 400 12.5px var(--r-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--r-fg2);
+}
+.reino-conclusao__sequencia {
+  margin: 6px 0 0;
+}
+.reino-conclusao__sequencia p {
+  color: var(--r-fg);
+}
+.reino-conclusao__bloco {
+  margin-top: 18px;
+  padding-top: 22px;
+  border-top: 1px dashed var(--r-trilho);
+}
+.reino-conclusao__reflexao {
+  margin-top: 18px;
+}
+.reino-conclusao__maxima {
+  margin: 6px 0 10px;
+  font: 400 24px/1.2 var(--r-display);
+  color: var(--r-anil);
+  text-wrap: balance;
+}
+.reino-conclusao__texto {
+  margin: 0;
+  font: 400 16.5px/1.7 var(--r-ui);
+  color: var(--r-anil);
+}
+.reino-conclusao__autor {
+  margin: 12px 0 0;
+  font: 400 11.5px var(--r-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5b6080;
+}
+.reino-conclusao__ler {
+  margin-top: 10px;
+  color: var(--r-anil);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 5px;
+}
+.reino-conclusao__estante {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+  grid-auto-columns: minmax(150px, 42%);
+}
