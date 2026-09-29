@@ -18,7 +18,6 @@ import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 import { ApiFetchError } from '../../api/apiFetch';
 import { MissingUserIdError } from '../../api/errors';
 import { track } from '../../analytics/track';
-import TopBar from '../../components/TopBar';
 import Sidebar from '../../components/Sidebar';
 
 type EndpointKey = 'memories' | 'perfil' | 'relatorio';
@@ -231,7 +230,6 @@ const MemoryLayout: React.FC = () => {
   const mountedRef = useRef(true);
   const profileUpdateTriedRef = useRef(false);
   const [state, setState] = useState<MemoryState>(INITIAL_STATE);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -470,10 +468,6 @@ const MemoryLayout: React.FC = () => {
           <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
           <div className="flex flex-col flex-1 min-w-0">
-            {/* Top Bar - APENAS DESKTOP */}
-            <div className="hidden lg:block">
-              <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />
-            </div>
             <div className="flex-1 flex items-center justify-center">
               <EcoBubbleLoading size={120} text="Carregando..." />
             </div>
@@ -491,10 +485,6 @@ const MemoryLayout: React.FC = () => {
           <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
           <div className="flex flex-col flex-1 min-w-0">
-            {/* Top Bar - APENAS DESKTOP */}
-            <div className="hidden lg:block">
-              <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />
-            </div>
             <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
               <h2 className="text-xl font-semibold text-neutral-900">Entre para continuar</h2>
               <p className="text-sm text-neutral-500">
@@ -520,10 +510,6 @@ const MemoryLayout: React.FC = () => {
         <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
         <div className="flex flex-col flex-1 min-w-0 bg-[#E9E6DC]">
-          {/* Top Bar - APENAS DESKTOP */}
-          <div className="hidden lg:block">
-            <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />
-          </div>
 
           <main className="flex-1 overflow-y-auto px-4 py-4 lg:py-4 pt-6 lg:pt-4 pb-20 lg:pb-4 bg-transparent">
             <div className="mx-auto max-w-4xl">
@@ -534,7 +520,7 @@ const MemoryLayout: React.FC = () => {
                   <p className="text-sm text-eco-text text-center">
                     {tier === 'essentials' ? (
                       <>
-                        📊 Você está vendo os últimos 90 dias (max 100 memórias).{' '}
+                        Você está vendo os últimos 90 dias (max 100 memórias).{' '}
                         <button
                           onClick={() => navigate('/app/programas')}
                           className="font-semibold text-eco-primary underline"
@@ -544,7 +530,7 @@ const MemoryLayout: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        📊 Você está vendo os últimos 30 dias (max 20 memórias).{' '}
+                        Você está vendo os últimos 30 dias (max 20 memórias).{' '}
                         <button
                           onClick={() => navigate('/app/programas')}
                           className="font-semibold text-eco-primary underline"
