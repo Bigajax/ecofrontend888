@@ -1,15 +1,14 @@
 // src/pages/CreateProfilePage.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth, type PreservedData } from '../contexts/AuthContext';
-import PhoneFrame from '../components/PhoneFrame';
 import WelcomeScreen from '../components/WelcomeScreen';
 import { fbq, trackWithCAPI } from '../lib/fbpixel';
 import { PRICE, planValue } from '../constants/offerCopy';
 import mixpanel from '../lib/mixpanel';
 import { supabase as supabaseClient } from '../lib/supabaseClient';
+import Entrada from '@/components/reino/ReinoEntrada';
 
 // Declaração de tipo para Google Identity Services
 declare global {
@@ -26,27 +25,12 @@ declare global {
   }
 }
 
-/* Bolha igual ao login (uma só) */
-const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' }) => (
-  <svg viewBox="0 0 96 96" className={className} aria-hidden="true">
-    <defs>
-      <radialGradient id="bgCore" cx="38%" cy="32%" r="62%">
-        <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.95"/>
-        <stop offset="45%" stopColor="#CDE6F0" stopOpacity="0.9"/>
-        <stop offset="100%" stopColor="#B5A8FF" stopOpacity="0.95"/>
-      </radialGradient>
-      <radialGradient id="spec" cx="28%" cy="22%" r="20%">
-        <stop offset="0%" stopColor="#fff" stopOpacity="0.95"/>
-        <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
-      </radialGradient>
-    </defs>
-    <g>
-      <circle cx="48" cy="48" r="30" fill="url(#bgCore)"/>
-      <circle cx="48" cy="48" r="30" fill="url(#spec)"/>
-      <circle cx="48" cy="48" r="30" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth="1.4"/>
-      <circle cx="48" cy="48" r="30" fill="none" stroke="rgba(2,6,23,.22)" strokeWidth="0.8"/>
-      <ellipse cx="38" cy="34" rx="12" ry="8" fill="#fff" opacity=".55"/>
-    </g>
+const GoogleIcon: React.FC = () => (
+  <svg width={18} height={18} viewBox="0 0 24 24" aria-hidden="true">
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
   </svg>
 );
 
@@ -346,100 +330,52 @@ const CreateProfilePage: React.FC = () => {
   if (user) {
     const displayName = userName || user.email || 'sua conta';
     return (
-      <PhoneFrame backgroundImage="/images/login-background.webp">
-        <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
-          <motion.div
-            initial={{ y: 16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full max-w-sm"
+      <Entrada>
+        <h1 className="reino-entrada__titulo">Você já está dentro.</h1>
+        <p className="reino-entrada__sobre">Conectado como {displayName}.</p>
+        <button type="button" className="reino-placa reino-entrada__entrar" onClick={() => navigate(returnTo)}>
+          Continuar <span aria-hidden="true">→</span>
+        </button>
+        <div className="reino-entrada__pe">
+          <button
+            type="button"
+            className="reino-entrada__link"
+            disabled={signingOut}
+            onClick={async () => {
+              setSigningOut(true);
+              try {
+                await signOut();
+              } finally {
+                setSigningOut(false);
+              }
+            }}
           >
-            <div className="rounded-3xl overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--neutral-border)', boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex flex-col items-center px-6 pt-7 pb-5 text-center" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                <div className="text-3xl mb-2">👤</div>
-                <h1 className="font-display text-[1.35rem] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                  Você já está logado
-                </h1>
-                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Sessão de <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayName}</span>
-                </p>
-              </div>
-              <div className="px-6 pb-6 pt-4 space-y-3">
-                <button
-                  type="button"
-                  onClick={() => navigate(returnTo)}
-                  className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
-                  style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)', boxShadow: 'var(--shadow-card)' }}
-                >
-                  Continuar como {userName || 'eu'}
-                </button>
-                <button
-                  type="button"
-                  disabled={signingOut}
-                  onClick={async () => {
-                    setSigningOut(true);
-                    try { await signOut(); } finally { setSigningOut(false); }
-                  }}
-                  className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--eco-line)] bg-white text-[14px] font-medium text-eco-text transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {signingOut ? 'Saindo…' : 'Sair e criar nova conta'}
-                </button>
-              </div>
-            </div>
-          </motion.div>
+            {signingOut ? 'Saindo…' : 'Sair e criar outra conta'}
+          </button>
         </div>
-      </PhoneFrame>
+      </Entrada>
     );
   }
 
   // Tela de confirmação de email
   if (showEmailConfirmation) {
     return (
-      <PhoneFrame backgroundImage="/images/login-background.webp">
-        <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
-          <motion.div
-            initial={{ y: 16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full max-w-sm"
-          >
-            <div className="rounded-3xl overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--neutral-border)', boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex flex-col items-center px-6 pt-7 pb-5 text-center" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                <div className="text-3xl mb-2">📬</div>
-                <h1 className="font-display text-[1.35rem] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                  Confirme seu email
-                </h1>
-                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Link enviado para{' '}
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{confirmedEmail}</span>
-                </p>
-              </div>
-              <div className="px-6 pb-6 pt-4 space-y-4 text-center">
-                <p className="text-[13px] text-eco-muted leading-relaxed">
-                  Clique no link para ativar sua conta.
-                  {returnTo.includes('/sono/') && ' Seu acesso ao Protocolo Sono será liberado automaticamente.'}
-                </p>
-                <p className="text-[11px] text-eco-muted/70">
-                  Não recebeu? Verifique a pasta de spam.
-                </p>
-                {returnTo.includes('/sono/') && (
-                  <p className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100">
-                    Acesso ao Protocolo Sono reservado — liberado após confirmação.
-                  </p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`)}
-                  className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
-                  style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)', boxShadow: 'var(--shadow-card)' }}
-                >
-                  Já confirmei — Entrar
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </PhoneFrame>
+      <Entrada>
+        <h1 className="reino-entrada__titulo">Confira o seu e-mail.</h1>
+        <p className="reino-entrada__sobre">
+          Mandamos um link para <strong>{confirmedEmail}</strong>. Toque nele para abrir a sua conta.
+          {returnTo.includes('/sono/') &&
+            ' O acesso ao Protocolo do Sono fica guardado e é liberado assim que você confirmar.'}
+        </p>
+        <p className="reino-entrada__retorno">Não chegou? Veja a caixa de spam.</p>
+        <button
+          type="button"
+          className="reino-placa reino-entrada__entrar"
+          onClick={() => navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`)}
+        >
+          Já confirmei, entrar <span aria-hidden="true">→</span>
+        </button>
+      </Entrada>
     );
   }
 
@@ -453,210 +389,116 @@ const CreateProfilePage: React.FC = () => {
     );
   }
 
+  const planoTexto = planFromQuery === 'annual' ? ' no plano anual' : planFromQuery === 'monthly' ? ' no plano mensal' : '';
+
   // Formulário de signup normal
   return (
-    <PhoneFrame backgroundImage="/images/login-background.webp">
-      <div className="relative min-h-[100dvh] w-full overflow-hidden text-slate-900">
-        <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
+    <Entrada>
+      <h1 className="reino-entrada__titulo">Comece o seu caminho.</h1>
+      <p className="reino-entrada__sobre">
+        {isLandingFlow
+          ? `7 dias grátis${planoTexto}. A primeira cobrança só vem depois.`
+          : 'Crie a conta para guardar o seu progresso e as conversas com a Eco.'}
+      </p>
 
-          <motion.div
-            initial={{ y: 16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full max-w-sm"
-          >
-            {/* Card principal */}
-            <div className="rounded-3xl overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--neutral-border)', boxShadow: 'var(--shadow-card)' }}>
+      <button type="button" onClick={handleGoogleSignUp} disabled={loading} className="reino-entrada__google">
+        <GoogleIcon />
+        Continuar com Google
+      </button>
 
-              {/* Topo: logo + título */}
-              <div className="flex flex-col items-center px-6 pt-7 pb-5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                <img
-                  src="/images/ECOTOPIA.webp"
-                  alt="Ecotopia"
-                  className="w-16 h-16 object-contain mb-3"
-                  loading="lazy"
-                />
-                <h1 className="font-display text-[1.35rem] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                  Crie sua conta
-                </h1>
-                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                  {isLandingFlow
-                    ? `7 dias gratuitos${planFromQuery === 'annual' ? ' · plano anual selecionado' : planFromQuery === 'monthly' ? ' · plano mensal selecionado' : ''}`
-                    : 'Menos de 30 segundos · sempre gratuito'}
-                </p>
-              </div>
+      <p className="reino-entrada__ou" aria-hidden="true">
+        ou com e-mail
+      </p>
 
-              {isLandingFlow && (
-                <div
-                  className="mx-6 mt-4 rounded-xl px-4 py-3 text-[12px] leading-relaxed"
-                  style={{
-                    backgroundColor: 'rgba(201, 169, 97, 0.08)',
-                    border: '1px solid rgba(201, 169, 97, 0.25)',
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  <strong style={{ color: '#8a7438' }}>7 dias gratuitos.</strong> Pedimos seu
-                  cartão no cadastro para garantir continuidade — mas você só é cobrado no
-                  <strong> 8º dia</strong>. Cancele em 1 clique até lá, sem cobrança, sem pergunta.
-                </div>
-              )}
+      <form onSubmit={handleSubmit} className="reino-entrada__form" noValidate>
+        <label className="reino-entrada__campo">
+          <span className="reino-entrada__rotulo">E-mail</span>
+          <input
+            id="email"
+            type="email"
+            placeholder="Seu email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            inputMode="email"
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? 'register-error' : undefined}
+          />
+        </label>
 
-              <div className="px-6 pb-6 space-y-4">
-                {/* Google primeiro */}
-                <button
-                  type="button"
-                  onClick={handleGoogleSignUp}
-                  disabled={loading}
-                  className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-xl text-[14px] font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                  style={{ border: '1.5px solid var(--neutral-border)', backgroundColor: 'var(--surface-card)', color: 'var(--text-primary)' }}
-                >
-                  <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  {loading ? 'Aguarde…' : 'Continuar com Google'}
-                </button>
-
-                {/* Divider */}
-                <div className="flex items-center gap-3" aria-hidden="true">
-                  <span className="h-px flex-1 bg-[var(--eco-line)]" />
-                  <span className="text-[10px] uppercase tracking-[0.4em] text-eco-muted">ou cadastre com email</span>
-                  <span className="h-px flex-1 bg-[var(--eco-line)]" />
-                </div>
-
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-3" noValidate>
-                  <div>
-                    <label className="sr-only" htmlFor="email">Email</label>
-                    <input
-                      id="email"
-                      type="email"
-                      placeholder="Seu email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      autoComplete="email"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      inputMode="email"
-                      autoFocus
-                      className="w-full h-12 rounded-xl px-4 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                      style={{ border: '1.5px solid var(--neutral-border)', backgroundColor: 'var(--surface-card)', color: 'var(--text-primary)' }}
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-semibold tracking-wide text-eco-muted uppercase" htmlFor="password">
-                        Senha
-                      </label>
-                      {!useAutoPassword && (
-                        <button
-                          type="button"
-                          onClick={handleGeneratePassword}
-                          className="text-[12px] font-medium text-eco-user hover:text-eco-text transition-colors duration-200"
-                        >
-                          Gerar senha
-                        </button>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <input
-                        id="password"
-                        type={showPwd ? 'text' : 'password'}
-                        placeholder="Mínimo 6 caracteres"
-                        value={password}
-                        onChange={(e) => { setPassword(e.target.value); setUseAutoPassword(false); }}
-                        required
-                        autoComplete="new-password"
-                        disabled={useAutoPassword}
-                        className="w-full h-12 rounded-xl px-4 pr-12 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 disabled:opacity-60"
-                        style={{ border: '1.5px solid var(--neutral-border)', backgroundColor: 'var(--surface-card)', color: 'var(--text-primary)' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPwd((s) => !s)}
-                        className="absolute inset-y-0 right-0 flex items-center px-3.5 text-eco-muted hover:text-eco-text transition-colors duration-200"
-                        aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
-                        aria-pressed={showPwd}
-                      >
-                        {showPwd ? <EyeOff size={17} /> : <Eye size={17} />}
-                      </button>
-                    </div>
-
-                    {useAutoPassword && (
-                      <div className="mt-2 flex items-center justify-between gap-2 px-3 py-2 rounded-lg"
-                        style={{ background: 'rgba(198,169,149,0.12)', border: '1px solid rgba(198,169,149,0.25)' }}>
-                        <p className="text-[11px] font-medium text-eco-user">
-                          {copiedPassword ? '✓ Senha copiada!' : 'Guarde em local seguro'}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={handleCopyPassword}
-                          className="text-[11px] font-semibold text-eco-user hover:text-eco-text underline underline-offset-2 transition-colors"
-                        >
-                          {copiedPassword ? '✓' : 'Copiar'}
-                        </button>
-                      </div>
-                    )}
-
-                    {!useAutoPassword && password && password.length < 6 && (
-                      <p className="text-[11px] text-eco-muted mt-1.5">Mínimo de 6 caracteres</p>
-                    )}
-                  </div>
-
-                  {/* Feedback */}
-                  <div className="min-h-[1rem]">
-                    <div role="alert" id="register-error" aria-live="assertive">
-                      {error && (
-                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                          className="text-[12px] text-rose-500 text-center">
-                          {error}
-                        </motion.p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* CTA principal */}
-                  <button
-                    type="submit"
-                    disabled={!canSubmit}
-                    className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:ring-offset-2"
-                    style={{
-                      backgroundColor: 'var(--accent)',
-                      color: 'var(--bg-primary)',
-                      boxShadow: canSubmit ? 'var(--shadow-card)' : 'none',
-                      opacity: canSubmit ? 1 : 0.45,
-                      cursor: canSubmit ? 'pointer' : 'not-allowed',
-                    }}
-                  >
-                    {loading ? 'Criando…' : 'Criar conta'}
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            {/* Link abaixo do card */}
-            <div className="mt-5 flex justify-center">
-              <button
-                type="button"
-                onClick={() => navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`)}
-                disabled={loading}
-                className="text-[13px] font-medium text-eco-text/70 hover:text-eco-text transition-colors duration-200 disabled:opacity-60"
-                style={{ textShadow: '0 1px 4px rgba(255,255,255,0.8)' }}
-              >
-                Já tem conta?{' '}
-                <span className="font-semibold text-eco-text" style={{ textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-                  Entrar
-                </span>
+        <div className="reino-entrada__campo">
+          <span className="reino-entrada__linha">
+            <label className="reino-entrada__rotulo" htmlFor="password">
+              Senha
+            </label>
+            {useAutoPassword ? (
+              <button type="button" onClick={handleCopyPassword} className="reino-entrada__link">
+                {copiedPassword ? 'Copiada' : 'Copiar senha'}
               </button>
-            </div>
-          </motion.div>
+            ) : (
+              <button type="button" onClick={handleGeneratePassword} className="reino-entrada__link">
+                Gerar uma para mim
+              </button>
+            )}
+          </span>
+          <span className="reino-entrada__senha">
+            <input
+              id="password"
+              type={showPwd ? 'text' : 'password'}
+              placeholder="Mínimo 6 caracteres"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setUseAutoPassword(false);
+              }}
+              required
+              autoComplete="new-password"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? 'register-error' : undefined}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPwd((v) => !v)}
+              className="reino-entrada__olho"
+              aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPwd}
+            >
+              {showPwd ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </span>
         </div>
+
+        <div className="reino-entrada__retorno">
+          <div role="alert" id="register-error" aria-live="assertive">
+            {error && <p className="is-erro">{error}</p>}
+          </div>
+          <div role="status" aria-live="polite">
+            {!error && useAutoPassword && <p className="is-ok">Senha criada. Guarde num lugar seguro.</p>}
+            {!error && !useAutoPassword && password && password.length < 6 && (
+              <p>Faltam {6 - password.length} caracteres.</p>
+            )}
+          </div>
+        </div>
+
+        <button type="submit" className="reino-placa reino-entrada__entrar" disabled={!canSubmit}>
+          {loading ? 'Criando…' : 'Criar conta'}
+        </button>
+      </form>
+
+      <div className="reino-entrada__pe">
+        <button
+          type="button"
+          onClick={() => navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`)}
+          disabled={loading}
+          className="reino-entrada__criar"
+        >
+          Já tem conta? <span>Entrar</span>
+        </button>
       </div>
-    </PhoneFrame>
+    </Entrada>
   );
 };
 

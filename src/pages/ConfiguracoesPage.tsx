@@ -1,23 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { TrendingUp, Heart, Award, Settings, MessageCircle, Globe, LogOut } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
+import { Astro, ReinoPintura, type ReinoRegiao } from '@/components/reino/ReinoScene';
+import { getReinoMood, type ReinoMood } from '@/components/reino/reinoMood';
+import { RESPONSAVEL } from '@/pages/legal/responsavel';
 import EstatisticasTotais from '@/components/settings/EstatisticasTotais';
 import Favoritos from '@/components/settings/Favoritos';
 import SubscriptionManagement from '@/components/settings/SubscriptionManagement';
+import '@/components/reino/reino.css';
+
+/**
+ * Sua conta, no reino. No lugar da bolinha com a inicial, a pintura da hora.
+ *
+ * Sai o que não funcionava (set/2026): "Atualizar" só fazia console.log,
+ * "Histórico de Humor" e "Idioma" abriam um painel vazio e a data de
+ * nascimento não era usada em lugar nenhum. Agora o nome salva de verdade
+ * (metadata do Supabase) e o e-mail aparece como é, sem campo que finge editar.
+ */
+const MENU = [
+  { id: 'configuracoes', label: 'Seus dados' },
+  { id: 'estatisticas', label: 'Seu progresso' },
+  { id: 'favoritos', label: 'Favoritos' },
+  { id: 'assinatura', label: 'Assinatura' },
+] as const;
+
+const PINTURA: Record<ReinoMood, { regiao: ReinoRegiao; foco: string }> = {
+  amanhecer: { regiao: 'portico', foco: '85% 50%' },
+  entardecer: { regiao: 'casa', foco: '15% 50%' },
+  noite: { regiao: 'vale', foco: '45% 50%' },
+};
+
+const SAUDACAO: Record<ReinoMood, string> = {
+  amanhecer: 'Bom dia',
+  entardecer: 'Boa tarde',
+  noite: 'Boa noite',
+};
 
 export default function ConfiguracoesPage() {
   const { user, signOut, isGuestMode } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const mood = getReinoMood();
   const [selectedMenu, setSelectedMenu] = useState('configuracoes');
 
   useEffect(() => {
-    // Verificar se há query parameter ?menu=
-    const searchParams = new URLSearchParams(location.search);
-    const menuParam = searchParams.get('menu');
-
+    const menuParam = new URLSearchParams(location.search).get('menu');
     if (menuParam) {
       setSelectedMenu(menuParam);
     } else if (location.state?.selectedMenu) {
@@ -25,244 +54,149 @@ export default function ConfiguracoesPage() {
     }
   }, [location.state, location.search]);
 
-  // Dados do usuário (mock - depois integrar com API)
-  const [formData, setFormData] = useState({
-    nome: user?.user_metadata?.full_name || (isGuestMode ? 'Convidado' : 'Usuário'),
-    email: user?.email || (isGuestMode ? '' : ''),
-    dataNascimento: user?.user_metadata?.birth_date || ''
-  });
+  const nomeSalvo: string = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+  const primeiroNome = nomeSalvo.trim().split(/\s+/)[0];
+  const [nome, setNome] = useState(nomeSalvo);
+  const [salvando, setSalvando] = useState(false);
+  const [retorno, setRetorno] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
 
-  const menuItems = [
-    { id: 'estatisticas', label: 'Estatísticas totais', icon: TrendingUp },
-    { id: 'favoritos', label: 'Favoritos', icon: Heart },
-    { id: 'assinatura', label: 'Assinatura', icon: Award },
-    { id: 'configuracoes', label: 'Configurações', icon: Settings },
-    { id: 'historico', label: 'Histórico de Humor', icon: MessageCircle },
-    { id: 'idioma', label: 'Idioma', icon: Globe },
-    { id: 'sair', label: 'Sair', icon: LogOut },
-  ];
+  useEffect(() => {
+    setNome(nomeSalvo);
+  }, [nomeSalvo]);
 
-  const handleUpdate = () => {
-    console.log('Atualizar dados:', formData);
-    // TODO: Implementar atualização via API
+  const salvarNome = async (e: FormEvent) => {
+    e.preventDefault();
+    const limpo = nome.trim();
+    if (!limpo || limpo === nomeSalvo || salvando) return;
+    setSalvando(true);
+    setRetorno(null);
+    const { error } = await supabase.auth.updateUser({ data: { full_name: limpo } });
+    setSalvando(false);
+    setRetorno(
+      error
+        ? { tipo: 'erro', texto: 'Não deu para salvar agora. Tente de novo em instantes.' }
+        : { tipo: 'ok', texto: 'Nome salvo.' }
+    );
   };
 
-  const handleExitToLogin = async () => {
-    // Fazer LOGOUT completo e sair do app (funciona para usuário logado e convidado)
+  const sair = async () => {
     try {
-      // Limpar dados específicos do usuário, mantendo preferências globais
-      const keysToRemove = [
-        'eco.guestId',
-        'eco.sessionId',
-        'eco.chat.v1',
-        'sb-',  // Supabase keys
-      ];
-
-      // Remove apenas chaves relacionadas ao usuário/sessão
-      Object.keys(localStorage).forEach(key => {
-        if (keysToRemove.some(prefix => key.startsWith(prefix))) {
-          localStorage.removeItem(key);
-        }
+      const prefixos = ['eco.guestId', 'eco.sessionId', 'eco.chat.v1', 'sb-'];
+      Object.keys(localStorage).forEach((key) => {
+        if (prefixos.some((p) => key.startsWith(p))) localStorage.removeItem(key);
       });
-
-      // Limpar sessionStorage
       sessionStorage.clear();
-
-      // Fazer logout do Supabase (se houver sessão)
       await signOut();
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     } finally {
-      // Redireciona para a página de login
       window.location.href = '/login';
     }
   };
 
-  const handleMenuClick = (itemId: string) => {
-    if (itemId === 'sair') {
-      handleExitToLogin();
-    } else {
-      setSelectedMenu(itemId);
-    }
-  };
-
-  const inputStyle: React.CSSProperties = {
-    border: '1.5px solid var(--neutral-border)',
-    backgroundColor: 'var(--surface-card)',
-    color: 'var(--text-primary)',
-  };
-
-  const inputDisabledStyle: React.CSSProperties = {
-    ...inputStyle,
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  };
+  const pintura = PINTURA[mood];
 
   return (
-    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-primary)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'calc(72px + env(safe-area-inset-bottom))' }}>
+    <div className="reino-app reino-conta" data-mood={mood}>
       <HomeHeader />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Profile Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-            {user?.user_metadata?.avatar_url ? (
-              <img
-                src={user.user_metadata.avatar_url}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-2xl font-bold" style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)' }}>
-                {user?.user_metadata?.full_name?.charAt(0) || (isGuestMode ? 'C' : 'U')}
-              </div>
-            )}
+      <main className="reino-corpo reino-conta__corpo">
+        <header className="reino-conta__topo">
+          <div className="reino-conta__retrato reino-rasgo-a">
+            <ReinoPintura regiao={pintura.regiao} foco={pintura.foco} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              {user?.user_metadata?.full_name || (isGuestMode ? 'Visitante' : 'Sua conta')}
+            <h1 className="reino-conta__ola">
+              <Astro className="reino-conta__astro" mood={mood} />
+              {isGuestMode ? 'Você está de visita.' : primeiroNome ? `${SAUDACAO[mood]}, ${primeiroNome}.` : 'Sua conta'}
             </h1>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {isGuestMode ? 'Modo convidado' : user?.email?.split('@')[0] || '@usuario'}
-            </p>
+            {!isGuestMode && user?.email && <p className="reino-conta__email">{user.email}</p>}
           </div>
-        </div>
+        </header>
 
-        {/* Main Content: Sidebar + Settings */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Sidebar Menu */}
-          <div className="lg:col-span-3">
-            <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--surface-card)', boxShadow: 'var(--shadow-card)' }}>
-              <nav className="space-y-1">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  const isSelected = selectedMenu === item.id;
+        <div className="reino-conta__grade">
+          <nav className="reino-conta__menu" aria-label="Sua conta">
+            {MENU.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`reino-conta__item${selectedMenu === item.id ? ' is-ativo' : ''}`}
+                aria-current={selectedMenu === item.id ? 'page' : undefined}
+                onClick={() => setSelectedMenu(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+            <button type="button" className="reino-conta__item is-sair" onClick={sair}>
+              Sair da conta
+            </button>
+          </nav>
 
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleMenuClick(item.id)}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
-                      style={isSelected
-                        ? { backgroundColor: 'var(--neutral-hover)', color: 'var(--accent)' }
-                        : { color: 'var(--text-muted)' }
-                      }
-                    >
-                      <Icon size={20} />
-                      <span className="text-sm font-medium">{item.label}</span>
+          <section className="reino-conta__painel">
+            {selectedMenu === 'estatisticas' && <EstatisticasTotais />}
+            {selectedMenu === 'favoritos' && <Favoritos />}
+            {selectedMenu === 'assinatura' && <SubscriptionManagement />}
+
+            {selectedMenu === 'configuracoes' && (
+              <>
+                <h2 className="reino-corpo__titulo reino-conta__titulo">Seus dados</h2>
+
+                {isGuestMode ? (
+                  <div className="reino-conta__visita">
+                    <p>Crie uma conta para guardar o seu progresso, os favoritos e as conversas com a Eco.</p>
+                    <button type="button" className="reino-placa" onClick={() => navigate('/register')}>
+                      Criar conta <span aria-hidden="true">→</span>
                     </button>
-                  );
-                })}
-              </nav>
-            </div>
-          </div>
+                  </div>
+                ) : (
+                  <form className="reino-entrada__form reino-conta__form" onSubmit={salvarNome}>
+                    <label className="reino-entrada__campo">
+                      <span className="reino-entrada__rotulo">Como a Eco chama você</span>
+                      <input
+                        type="text"
+                        value={nome}
+                        autoComplete="name"
+                        placeholder="Seu nome"
+                        onChange={(e) => {
+                          setNome(e.target.value);
+                          setRetorno(null);
+                        }}
+                      />
+                    </label>
 
-          {/* Settings Content */}
-          <div className="lg:col-span-9">
-            <div className="rounded-2xl p-6 md:p-8" style={{ backgroundColor: 'var(--surface-card)', boxShadow: 'var(--shadow-card)' }}>
-              {selectedMenu === 'estatisticas' && <EstatisticasTotais />}
-              {selectedMenu === 'favoritos' && <Favoritos />}
-              {selectedMenu === 'assinatura' && <SubscriptionManagement />}
-
-              {selectedMenu === 'configuracoes' && (
-                <>
-                  <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>Configurações</h2>
-
-                  {/* Guest mode warning */}
-                  {isGuestMode && (
-                    <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: 'var(--neutral-hover)', border: '1px solid var(--neutral-border)' }}>
-                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        <strong>Modo convidado:</strong> Você está usando o Ecotopia como convidado.
-                        <button
-                          onClick={() => navigate('/register')}
-                          className="ml-1 underline font-semibold"
-                          style={{ color: 'var(--accent)' }}
-                        >
-                          Crie uma conta
-                        </button>
-                        {' '}para salvar suas informações e acessar todos os recursos.
+                    <div className="reino-entrada__campo">
+                      <span className="reino-entrada__rotulo">E-mail</span>
+                      <p className="reino-conta__valor">{user?.email}</p>
+                      <p className="reino-conta__dica">
+                        Para trocar o e-mail, escreva para{' '}
+                        <a href={`mailto:${RESPONSAVEL.email}`}>{RESPONSAVEL.email}</a>.
                       </p>
                     </div>
-                  )}
 
-                  <div className="space-y-6">
-                    {/* Section Title */}
-                    <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: 'var(--text-muted)' }}>
-                        Informações Pessoais
-                      </h3>
-
-                      {/* Form Fields */}
-                      <div className="space-y-4">
-                        {/* Nome */}
-                        <div>
-                          <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>Nome</label>
-                          <input
-                            type="text"
-                            value={formData.nome}
-                            onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                            disabled={isGuestMode}
-                            placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
-                            className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-transparent transition-all"
-                            style={isGuestMode ? inputDisabledStyle : inputStyle}
-                          />
-                        </div>
-
-                        {/* E-mail */}
-                        <div>
-                          <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>E-mail</label>
-                          <input
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            disabled={isGuestMode}
-                            placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
-                            className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-transparent transition-all"
-                            style={isGuestMode ? inputDisabledStyle : inputStyle}
-                          />
-                        </div>
-
-                        {/* Data de Nascimento */}
-                        <div>
-                          <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>Data de nascimento</label>
-                          <input
-                            type="text"
-                            value={formData.dataNascimento}
-                            onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
-                            disabled={isGuestMode}
-                            placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
-                            className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-transparent transition-all"
-                            style={isGuestMode ? inputDisabledStyle : inputStyle}
-                          />
-                        </div>
-                      </div>
+                    <div className="reino-entrada__retorno" role="status">
+                      {retorno && <p className={retorno.tipo === 'ok' ? 'is-ok' : 'is-erro'}>{retorno.texto}</p>}
                     </div>
 
-                    {/* Update Button */}
-                    {isGuestMode ? (
-                      <button
-                        onClick={() => navigate('/register')}
-                        className="min-h-[48px] px-8 py-3 font-medium rounded-full transition-all hover:opacity-90 active:scale-95"
-                        style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)' }}
-                      >
-                        Criar conta gratuita
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleUpdate}
-                        className="min-h-[48px] px-8 py-3 font-medium rounded-full transition-all hover:opacity-90 active:scale-95"
-                        style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)' }}
-                      >
-                        Atualizar
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+                    <button
+                      type="submit"
+                      className="reino-placa reino-conta__salvar"
+                      disabled={salvando || !nome.trim() || nome.trim() === nomeSalvo}
+                    >
+                      {salvando ? 'Salvando' : 'Salvar'}
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
+          </section>
         </div>
-      </div>
+
+        <footer className="reino-conta__pe">
+          <Link to="/termos">Termos de uso</Link>
+          <Link to="/privacidade">Privacidade</Link>
+          <Link to="/cancelar-assinatura">Como cancelar</Link>
+        </footer>
+      </main>
     </div>
   );
 }

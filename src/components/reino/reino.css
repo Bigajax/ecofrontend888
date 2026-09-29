@@ -3127,3 +3127,339 @@
   font: 400 12.5px 'IBM Plex Mono', ui-monospace, monospace;
   color: var(--r-fg2);
 }
+
+/* ── Sua conta (set/2026) ──
+   No lugar da inicial num círculo, a pintura da hora com borda rasgada.
+   Menu é texto: o item ativo ganha o traço ocre, como um marcador de página. */
+.reino-conta {
+  min-height: 100dvh;
+  background: var(--r-linho);
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+.reino-conta__corpo {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: clamp(28px, 5vw, 56px) 16px 40px;
+}
+.reino-conta__topo {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 28px);
+  margin-bottom: clamp(28px, 5vw, 48px);
+}
+.reino-conta__retrato {
+  flex: none;
+  width: clamp(76px, 12vw, 112px);
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+.reino-conta__retrato img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.reino-conta__ola {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font: 400 clamp(28px, 4.4vw, 46px) / 1.05 var(--r-display);
+  color: var(--r-anil);
+  text-wrap: balance;
+}
+.reino-conta__astro {
+  flex: none;
+  width: clamp(30px, 4vw, 42px);
+  height: auto;
+  color: var(--r-anil);
+}
+.reino-conta__email {
+  margin: 8px 0 0;
+  font: 400 13px var(--r-mono);
+  color: var(--r-fg2);
+  overflow-wrap: anywhere;
+}
+.reino-conta__grade {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 64px);
+  align-items: start;
+}
+.reino-conta__menu {
+  display: grid;
+  gap: 2px;
+  position: sticky;
+  top: 88px;
+}
+.reino-conta__item {
+  position: relative;
+  padding: 10px 0 10px 18px;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--r-fg2);
+  font: 400 19px/1.2 var(--r-display);
+  cursor: pointer;
+}
+.reino-conta__item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 6px;
+  height: 22px;
+  translate: 0 -50%;
+  border-radius: 3px 1px 4px 2px;
+  background: var(--r-ocre);
+  opacity: 0;
+}
+.reino-conta__item:hover {
+  color: var(--r-anil);
+}
+.reino-conta__item.is-ativo {
+  color: var(--r-anil);
+}
+.reino-conta__item.is-ativo::before {
+  opacity: 1;
+}
+.reino-conta__item.is-sair {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--r-trilho);
+  font: 500 14px var(--r-ui);
+}
+.reino-conta__item.is-sair::before {
+  display: none;
+}
+.reino-conta__painel {
+  min-width: 0;
+  padding: clamp(22px, 4vw, 40px);
+  background: var(--r-papel);
+  box-shadow: 0 3px 0 -1px rgba(28, 35, 80, 0.12);
+  clip-path: polygon(0 0.6%, 12% 0, 38% 0.8%, 64% 0.1%, 100% 0.7%, 99.6% 38%, 100% 72%, 99.5% 100%, 70% 99.3%, 41% 100%, 0 99.4%, 0.4% 60%);
+}
+.reino-conta__titulo {
+  margin: 0 0 24px;
+}
+.reino-conta__form {
+  max-width: 440px;
+}
+.reino-conta__valor {
+  margin: 0;
+  font: 400 16px var(--r-ui);
+  color: var(--r-anil);
+  overflow-wrap: anywhere;
+}
+.reino-conta__dica {
+  margin: 0;
+  font: 400 13px/1.45 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-conta__dica a {
+  color: var(--r-anil);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 3px;
+}
+.reino-conta .reino-conta__salvar {
+  margin-top: 0;
+  justify-self: start;
+}
+.reino-conta__salvar:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.reino-conta__visita p {
+  margin: 0;
+  max-width: 32em;
+  color: var(--r-fg2);
+  line-height: 1.5;
+}
+.reino-conta__pe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 40px;
+  font: 400 12.5px var(--r-mono);
+}
+.reino-conta__pe a {
+  color: var(--r-fg2);
+}
+.reino-conta__pe a:hover {
+  color: var(--r-anil);
+}
+@media (max-width: 760px) {
+  .reino-conta__grade {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .reino-conta__menu {
+    position: static;
+    display: flex;
+    gap: 4px 18px;
+    flex-wrap: wrap;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--r-trilho);
+  }
+  .reino-conta__item {
+    flex: none;
+    padding: 8px 0 12px;
+    font-size: 17px;
+  }
+  .reino-conta__item::before {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 2px;
+    width: auto;
+    height: 4px;
+    translate: none;
+  }
+  .reino-conta__item.is-sair {
+    margin: 0;
+    padding: 8px 0 12px;
+    border-top: 0;
+  }
+}
+
+/* ── Tour do visitante: "Explorar sem conta" (set/2026) ──
+   Um lugar por passo. Pintura em cima com a borda rasgada, folha na cor da hora
+   embaixo. Nada anima sozinho: o passo troca quando a pessoa toca. */
+.reino-tour.reino-hero {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  clip-path: none;
+  overflow-y: auto;
+}
+.reino-tour__topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: max(16px, env(safe-area-inset-top)) 20px 12px;
+}
+.reino-tour__passo {
+  font: 400 12px var(--r-mono);
+  letter-spacing: 0.04em;
+  color: var(--r-fg2);
+}
+.reino-tour__fechar,
+.reino-tour__pular {
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg);
+  font: 500 14px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.reino-tour__pintura {
+  flex: 1 1 auto;
+  min-height: 220px;
+  max-height: 58vh;
+  margin: 0 16px;
+  overflow: hidden;
+}
+.reino-tour__pintura img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reino-tour__convite {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+}
+.reino-tour__astro {
+  width: clamp(96px, 22vw, 150px);
+  height: auto;
+  color: var(--r-fg);
+}
+.reino-tour__folha {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 20px max(28px, env(safe-area-inset-bottom));
+}
+.reino-tour__lugar {
+  margin: 0 0 6px;
+  font: 400 12px var(--r-mono);
+  letter-spacing: 0.04em;
+  color: var(--r-ocre);
+}
+.reino-hero[data-mood='amanhecer'] .reino-tour__lugar {
+  color: var(--r-fg2);
+}
+.reino-tour__titulo {
+  margin: 0;
+  font: 400 clamp(28px, 6vw, 40px) / 1.08 var(--r-display);
+  text-wrap: balance;
+}
+.reino-tour__texto {
+  margin: 10px 0 0;
+  max-width: 32em;
+  color: var(--r-fg2);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.reino-tour__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+}
+@media (min-width: 900px) {
+  .reino-tour.reino-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    align-items: center;
+  }
+  .reino-tour__topo {
+    grid-column: 1 / -1;
+  }
+  .reino-tour__pintura,
+  .reino-tour__convite {
+    height: 72vh;
+    max-height: none;
+    margin: 0 0 0 32px;
+  }
+  .reino-tour__folha {
+    padding: 0 48px;
+  }
+}
+
+/* Faixa do visitante (modo sem conta), no topo do app */
+.reino-visita {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px 14px;
+  padding: 9px 16px;
+  background: #f4f1e8;
+  border-bottom: 2px solid #edb85a;
+  color: #1c2350;
+  font: 400 13px/1.4 'Figtree', system-ui, sans-serif;
+  text-align: center;
+}
+.reino-visita p {
+  margin: 0;
+}
+.reino-visita button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1c2350;
+  font: 600 13px 'Figtree', system-ui, sans-serif;
+  text-decoration: underline;
+  text-decoration-color: #edb85a;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}

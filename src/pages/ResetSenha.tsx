@@ -1,191 +1,195 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 
 import { supabase } from '@/lib/supabaseClient';
+import Entrada from '@/components/reino/ReinoEntrada';
 
+/**
+ * Nova senha, aberta pelo link do e-mail. A sessão de recuperação pode chegar um
+ * instante depois da página (o Supabase lê o link da URL), então a validação
+ * também escuta o evento de login antes de declarar o link vencido.
+ */
 const ResetSenha: React.FC = () => {
   const navigate = useNavigate();
 
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [mostrar, setMostrar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [linkVencido, setLinkVencido] = useState(false);
 
   useEffect(() => {
     let active = true;
 
-    const validateRecoverySession = async () => {
-      const { data, error: sessionError } = await supabase.auth.getSession();
+    const { data: sub } = supabase.auth.onAuthStateChange((_evento, session) => {
+      if (active && session?.user) {
+        setSessionReady(true);
+        setLinkVencido(false);
+      }
+    });
 
+    const validar = async () => {
+      const { data } = await supabase.auth.getSession();
       if (!active) return;
-
-      if (sessionError) {
-        setError('Não foi possível validar o link de recuperação. Tente novamente.');
-        setSessionReady(false);
+      if (data.session?.user) {
+        setSessionReady(true);
         return;
       }
-
-      if (!data.session || !data.session.user) {
-        setError('Este link de redefinição é inválido ou expirou. Solicite um novo link.');
-        setSessionReady(false);
-        return;
-      }
-
-      setSessionReady(true);
+      // dá um tempo para o link ser lido antes de dizer que venceu
+      window.setTimeout(async () => {
+        if (!active) return;
+        const { data: again } = await supabase.auth.getSession();
+        if (!active) return;
+        if (again.session?.user) setSessionReady(true);
+        else setLinkVencido(true);
+      }, 1500);
     };
 
-    validateRecoverySession();
+    validar();
 
     return () => {
       active = false;
+      sub.subscription.unsubscribe();
     };
   }, []);
 
-  const canSubmit = useMemo(() => {
-    return (
-      sessionReady &&
-      !success &&
-      !loading &&
-      novaSenha.trim().length >= 8 &&
-      confirmarSenha.trim().length >= 8 &&
-      novaSenha === confirmarSenha
-    );
-  }, [sessionReady, success, loading, novaSenha, confirmarSenha]);
+  const canSubmit = useMemo(
+    () => sessionReady && !success && !loading && novaSenha.trim().length >= 8 && novaSenha === confirmarSenha,
+    [sessionReady, success, loading, novaSenha, confirmarSenha]
+  );
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     if (!sessionReady || loading) return;
 
-    const trimmedPassword = novaSenha.trim();
-    const trimmedConfirmation = confirmarSenha.trim();
-
-    if (trimmedPassword.length < 8) {
-      setError('A senha deve ter pelo menos 8 caracteres.');
-      setSuccess('');
+    const senha = novaSenha.trim();
+    if (senha.length < 8) {
+      setError('A senha precisa de pelo menos 8 caracteres.');
       return;
     }
-
-    if (trimmedPassword !== trimmedConfirmation) {
-      setError('As senhas devem ser iguais.');
-      setSuccess('');
+    if (senha !== confirmarSenha.trim()) {
+      setError('As duas senhas não são iguais.');
       return;
     }
 
     setLoading(true);
     setError('');
-
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: trimmedPassword,
-    });
+    const { error: updateError } = await supabase.auth.updateUser({ password: senha });
+    setLoading(false);
 
     if (updateError) {
-      setError(updateError.message || 'Não foi possível atualizar a senha.');
-      setLoading(false);
+      setError('Não deu para trocar a senha agora. Tente de novo em instantes.');
       return;
     }
-
-    setSuccess('Senha atualizada!');
-    setLoading(false);
+    setSuccess(true);
     setNovaSenha('');
     setConfirmarSenha('');
   };
 
+  if (success) {
+    return (
+      <Entrada>
+        <h1 className="reino-entrada__titulo">Senha trocada.</h1>
+        <p className="reino-entrada__sobre">Da próxima vez, entre com a senha nova.</p>
+        <button type="button" className="reino-placa reino-entrada__entrar" onClick={() => navigate('/app')}>
+          Entrar no reino <span aria-hidden="true">→</span>
+        </button>
+      </Entrada>
+    );
+  }
+
+  if (linkVencido) {
+    return (
+      <Entrada>
+        <h1 className="reino-entrada__titulo">Este link já venceu.</h1>
+        <p className="reino-entrada__sobre">
+          Links de nova senha valem por pouco tempo. Na entrada, digite o seu e-mail e toque em "Esqueceu a senha?" para
+          receber outro.
+        </p>
+        <button type="button" className="reino-placa reino-entrada__entrar" onClick={() => navigate('/login')}>
+          Ir para a entrada <span aria-hidden="true">→</span>
+        </button>
+      </Entrada>
+    );
+  }
+
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-4 py-12">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-20 top-20 h-72 w-72 rounded-full bg-emerald-400/30 blur-3xl" aria-hidden />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl" aria-hidden />
-      </div>
+    <Entrada>
+      <h1 className="reino-entrada__titulo">Crie uma senha nova.</h1>
+      <p className="reino-entrada__sobre">Pelo menos 8 caracteres.</p>
 
-      <div
-        className="relative w-full max-w-md space-y-6 rounded-3xl border border-white/25 bg-white/10 p-10 text-white backdrop-blur-2xl"
-      >
-        <header className="space-y-3 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">Redefinir senha</h1>
-          <p className="text-sm text-slate-200/80">
-            Crie uma nova senha para acessar sua conta com segurança.
-          </p>
-        </header>
-
-        <div aria-live="assertive" className="sr-only">
-          {error}
-        </div>
-        <div aria-live="polite" className="sr-only">
-          {success}
-        </div>
-
-        {error && (
-          <p role="alert" className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm text-rose-100">
-            {error}
-          </p>
-        )}
-
-        {success && (
-          <p role="status" className="rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-100">
-            {success}
-          </p>
-        )}
-
-        <form className="space-y-5" onSubmit={handleSubmit} noValidate>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-100" htmlFor="nova-senha">
-              Nova senha
-            </label>
+      <form className="reino-entrada__form" onSubmit={handleSubmit} noValidate>
+        <div className="reino-entrada__campo">
+          <label className="reino-entrada__rotulo" htmlFor="nova-senha">
+            Nova senha
+          </label>
+          <span className="reino-entrada__senha">
             <input
               id="nova-senha"
-              type="password"
+              type={mostrar ? 'text' : 'password'}
               autoComplete="new-password"
               value={novaSenha}
-              onChange={(event) => setNovaSenha(event.target.value)}
-              minLength={8}
-              disabled={!sessionReady || loading || Boolean(success)}
-              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder:text-slate-300/70 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300/50"
-              placeholder="Digite a nova senha"
+              onChange={(e) => {
+                setNovaSenha(e.target.value);
+                setError('');
+              }}
+              disabled={!sessionReady || loading}
               required
             />
+            <button
+              type="button"
+              onClick={() => setMostrar((v) => !v)}
+              className="reino-entrada__olho"
+              aria-label={mostrar ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={mostrar}
+            >
+              {mostrar ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </span>
+        </div>
+
+        <label className="reino-entrada__campo">
+          <span className="reino-entrada__rotulo">Repita a senha</span>
+          <input
+            id="confirmar-senha"
+            type={mostrar ? 'text' : 'password'}
+            autoComplete="new-password"
+            value={confirmarSenha}
+            onChange={(e) => {
+              setConfirmarSenha(e.target.value);
+              setError('');
+            }}
+            disabled={!sessionReady || loading}
+            required
+          />
+        </label>
+
+        <div className="reino-entrada__retorno">
+          <div role="alert" aria-live="assertive">
+            {error && <p className="is-erro">{error}</p>}
           </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-100" htmlFor="confirmar-senha">
-              Confirmar senha
-            </label>
-            <input
-              id="confirmar-senha"
-              type="password"
-              autoComplete="new-password"
-              value={confirmarSenha}
-              onChange={(event) => setConfirmarSenha(event.target.value)}
-              minLength={8}
-              disabled={!sessionReady || loading || Boolean(success)}
-              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder:text-slate-300/70 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300/50"
-              placeholder="Confirme a nova senha"
-              required
-            />
+          <div role="status" aria-live="polite">
+            {!error && !sessionReady && <p>Abrindo o link…</p>}
+            {!error && confirmarSenha && novaSenha !== confirmarSenha && <p>As duas ainda não são iguais.</p>}
           </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="w-full rounded-2xl bg-emerald-400/90 px-4 py-3 text-sm font-semibold uppercase tracking-wider text-slate-900 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-300/50 disabled:text-slate-500"
-          >
-            {loading ? 'Atualizando...' : 'Atualizar senha'}
-          </button>
-        </form>
+        <button type="submit" className="reino-placa reino-entrada__entrar" disabled={!canSubmit}>
+          {loading ? 'Salvando…' : 'Salvar senha'}
+        </button>
+      </form>
 
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          className="w-full rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-        >
-          Voltar para login
+      <div className="reino-entrada__pe">
+        <button type="button" className="reino-entrada__link" onClick={() => navigate('/login')}>
+          Voltar para a entrada
         </button>
       </div>
-    </div>
+    </Entrada>
   );
 };
 
 export default ResetSenha;
-

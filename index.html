@@ -118,96 +118,21 @@
       src="https://www.facebook.com/tr?id=1452404496069451&ev=PageView&noscript=1"
     /></noscript>
     <div id="root">
-      <!-- 🛡️ FALLBACK DE SEGURANÇA: Mostrado se React não montar em 10s -->
-      <!-- Crítico para Safari Mobile que pode falhar ao carregar após inatividade -->
+      <!-- Carregamento do reino: o script abaixo pinta o astro e o céu da hora. -->
       <div id="loading-fallback" style="
         display: flex;
         min-height: 100vh;
         width: 100%;
         align-items: center;
         justify-content: center;
-        background: #FFFFFF;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
-        padding: 20px;
+        background: #10153A;
         box-sizing: border-box;
-      ">
-        <div style="text-align: center; max-width: 400px;">
-          <!-- Conceito ECO: ondas que partem do símbolo, no ritmo de uma respiração -->
-          <div style="
-            position: relative;
-            margin: 0 auto 36px;
-            width: 200px;
-            height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          ">
-            <!-- Aura -->
-            <span style="
-              position: absolute;
-              width: 260px;
-              height: 260px;
-              border-radius: 50%;
-              background: radial-gradient(circle, rgba(110,200,255,0.18) 0%, rgba(110,200,255,0) 68%);
-              animation: ecoAura 5.6s ease-in-out infinite;
-            "></span>
-            <!-- Ondas-eco escalonadas -->
-            <span style="
-              position: absolute; width: 118px; height: 118px; border-radius: 50%;
-              border: 1px solid rgba(110,200,255,0.45);
-              animation: ecoEcho 4.8s cubic-bezier(0.22,0.61,0.36,1) infinite;
-            "></span>
-            <span style="
-              position: absolute; width: 118px; height: 118px; border-radius: 50%;
-              border: 1px solid rgba(110,200,255,0.45);
-              animation: ecoEcho 4.8s cubic-bezier(0.22,0.61,0.36,1) infinite;
-              animation-delay: 1.6s;
-            "></span>
-            <span style="
-              position: absolute; width: 118px; height: 118px; border-radius: 50%;
-              border: 1px solid rgba(110,200,255,0.45);
-              animation: ecoEcho 4.8s cubic-bezier(0.22,0.61,0.36,1) infinite;
-              animation-delay: 3.2s;
-            "></span>
-            <!-- Símbolo respirando -->
-            <img
-              src="/images/ecotopia-logo-mark.webp"
-              alt="Ecotopia"
-              width="74"
-              height="74"
-              style="
-                position: relative;
-                width: 74px;
-                height: 74px;
-                object-fit: contain;
-                animation: ecoBreathe 5.6s ease-in-out infinite;
-              "
-            />
-          </div>
-
-          <!-- Legenda em Lora itálico (serif de display da marca) -->
-          <p style="
-            font-family: 'Lora', Georgia, serif;
-            font-style: italic;
-            font-size: 15px;
-            letter-spacing: 0.01em;
-            color: #6B8099;
-            margin: 0;
-            animation: ecoCaption 4.4s ease-in-out infinite;
-          ">carregando…</p>
-        </div>
-      </div>
+      "></div>
     </div>
 
-    <!-- No app logado (/app), a primeira tela já é o reino se desenhando, na cor da hora de Brasília.
-         Landing e funil seguem com a tela acima. -->
+    <!-- A primeira tela é o reino se desenhando, na cor da hora de Brasília, em qualquer rota. -->
     <script>
       (function () {
-        // Quem está logado (sessão salva do Supabase) vê o reino em qualquer rota;
-        // só o visitante das landings e do funil fica com a tela original.
-        var logado = false;
-        try { logado = !!localStorage.getItem('eco-auth-token'); } catch (e) {}
-        if (location.pathname.indexOf('/app') !== 0 && !logado) return;
         var el = document.getElementById('loading-fallback');
         if (!el) return;
         var h = 20;
@@ -253,29 +178,6 @@
     <style>
       @keyframes spin {
         to { transform: rotate(360deg); }
-      }
-
-      @keyframes ecoBreathe {
-        0%, 100% { transform: scale(1);    filter: drop-shadow(0 8px 18px rgba(54,168,232,0.20)); }
-        50%      { transform: scale(1.05); filter: drop-shadow(0 12px 30px rgba(54,168,232,0.34)); }
-      }
-      @keyframes ecoEcho {
-        0%   { transform: scale(0.55); opacity: 0; }
-        14%  { opacity: 0.5; }
-        100% { transform: scale(2.15); opacity: 0; }
-      }
-      @keyframes ecoAura {
-        0%, 100% { transform: scale(1);    opacity: 0.55; }
-        50%      { transform: scale(1.12); opacity: 0.9; }
-      }
-      @keyframes ecoCaption {
-        0%, 100% { opacity: 0.45; }
-        50%      { opacity: 0.95; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        #loading-fallback img,
-        #loading-fallback span,
-        #loading-fallback p { animation: none !important; }
       }
 
       /* 🛡️ Ocultar fallback quando React montar */
@@ -344,75 +246,27 @@
 
             if (fallback) {
               // Habilitar pointer-events APENAS para fallback de erro (com botões)
-              fallback.style.pointerEvents = 'auto';
+              fallback.style.pointerEvents = 'auto'; fallback.style.background = '#10153A';
               fallback.innerHTML = `
-                <div style="text-align: center; max-width: 420px; padding: 32px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
-                  <!-- Ícone de Erro -->
-                  <div style="
-                    width: 64px;
-                    height: 64px;
-                    margin: 0 auto 20px;
-                    background: #FEE2E2;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 32px;
-                  ">⚠️</div>
-
-                  <h1 style="
-                    font-size: 20px;
-                    font-weight: 600;
-                    color: #1E293B;
-                    margin: 0 0 12px;
-                  ">Ops! Algo deu errado</h1>
-
-                  <p style="
-                    font-size: 14px;
-                    color: #64748B;
-                    line-height: 1.6;
-                    margin: 0 0 24px;
-                  ">
-                    O aplicativo não conseguiu carregar corretamente.
+                <div style="text-align: left; max-width: 360px; padding: 0 20px; color: #F4F1E8; font-family: Figtree, system-ui, sans-serif;">
+                  <h1 style="margin: 0 0 10px; font: 400 30px/1.1 'Young Serif', Georgia, serif;">O caminho não abriu.</h1>
+                  <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.5; color: rgba(244,241,232,0.72);">
+                    O app não terminou de carregar.
                     ${/safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent)
-                      ? 'Isso pode acontecer no Safari após inatividade.'
-                      : 'Tente recarregar a página.'
+                      ? 'No Safari isso acontece depois de um tempo parado.'
+                      : 'Recarregar costuma resolver.'
                     }
                   </p>
-
-                  <!-- Botões -->
-                  <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button onclick="window.location.reload()" style="
-                      width: 100%;
-                      padding: 14px 24px;
-                      background: #3B82F6;
-                      color: white;
-                      border: none;
-                      border-radius: 12px;
-                      font-size: 15px;
-                      font-weight: 600;
-                      cursor: pointer;
-                      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-                    ">🔄 Recarregar Página</button>
-
-                    <button onclick="localStorage.clear(); sessionStorage.clear(); window.location.href = '/login';" style="
-                      width: 100%;
-                      padding: 14px 24px;
-                      background: white;
-                      color: #64748B;
-                      border: 2px solid #E2E8F0;
-                      border-radius: 12px;
-                      font-size: 15px;
-                      font-weight: 600;
-                      cursor: pointer;
-                    ">🏠 Limpar e Ir para Login</button>
-                  </div>
-
-                  <p style="
-                    font-size: 12px;
-                    color: #94A3B8;
-                    margin: 16px 0 0;
-                  ">Tempo de espera: ${Math.round((Date.now() - startTime) / 1000)}s</p>
+                  <button onclick="window.location.reload()" style="
+                    display: block; min-height: 46px; padding: 12px 22px; border: 0; border-radius: 3px 8px 4px 9px;
+                    background: #EDB85A; color: #1C2350; font: 600 13px Figtree, system-ui, sans-serif;
+                    letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer;
+                  ">Recarregar</button>
+                  <button onclick="localStorage.clear(); sessionStorage.clear(); window.location.href = '/login';" style="
+                    margin-top: 14px; padding: 0; border: 0; background: none; color: #F4F1E8;
+                    font: 500 13px Figtree, system-ui, sans-serif; text-decoration: underline;
+                    text-decoration-color: #EDB85A; text-underline-offset: 4px; cursor: pointer;
+                  ">Limpar e voltar para a entrada</button>
                 </div>
               `;
             }

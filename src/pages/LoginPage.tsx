@@ -165,7 +165,7 @@ const LoginPage: React.FC = () => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
       setForgotMessage('');
-      setForgotError('Digite seu e-mail');
+      setForgotError('Digite o seu e-mail acima e toque de novo.');
       return;
     }
     setForgotMessage('');
