@@ -23,6 +23,7 @@ import UpgradeModal from '@/components/subscription/UpgradeModal';
 import { useSubscriptionTier, usePremiumContent } from '@/hooks/usePremiumContent';
 import { getRequiredTier } from '@/constants/meditationTiers';
 import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
+import { estaGuardada, guardar, tirarDasGuardadas } from '@/utils/guardadas';
 
 interface MeditationData {
   id?: string;
@@ -149,7 +150,7 @@ export default function MeditationPlayerPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(() => estaGuardada(user?.id, meditationData.id));
   const [showFavoriteToast, setShowFavoriteToast] = useState(false);
 
   // Estados para sons de fundo
@@ -505,6 +506,21 @@ export default function MeditationPlayerPage() {
   const handleFavoriteToggle = () => {
     const newFavoriteState = !isFavorite;
     setIsFavorite(newFavoriteState);
+    if (meditationData.id) {
+      if (newFavoriteState) {
+        guardar(user?.id, {
+          id: meditationData.id,
+          title: meditationData.title,
+          duration: meditationData.duration,
+          audioUrl: meditationData.audioUrl,
+          imageUrl: meditationData.imageUrl,
+          category,
+          gradient: (meditationData as { gradient?: string }).gradient,
+        });
+      } else {
+        tirarDasGuardadas(user?.id, meditationData.id);
+      }
+    }
 
     // Track Favorited/Unfavorited
     if (newFavoriteState) {
@@ -1823,28 +1839,11 @@ export default function MeditationPlayerPage() {
         </div>
       )}
 
-      {/* Toast de Confirmação de Favorito */}
+      {/* Aviso de guardada, no reino: uma linha, com o caminho para achá-la depois */}
       {showFavoriteToast && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-slide-down">
-          <div
-            className="backdrop-blur-md rounded-2xl shadow-2xl px-6 py-4 flex items-center gap-3 border"
-            style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--neutral-border)' }}
-          >
-            <div
-              className="flex items-center justify-center w-10 h-10 rounded-full"
-              style={{ backgroundColor: 'rgba(239,68,68,0.10)' }}
-            >
-              <Heart size={20} className="text-red-500 fill-red-500" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Adicionado aos favoritos!
-              </span>
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {meditationData.title}
-              </span>
-            </div>
-          </div>
+        <div className="reino-guardada" role="status">
+          <span>Guardada em Sua conta.</span>
+          <span className="reino-guardada__titulo">{meditationData.title}</span>
         </div>
       )}
 

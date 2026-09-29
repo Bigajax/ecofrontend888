@@ -1,162 +1,79 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Play } from 'lucide-react';
-import { trackMeditationEvent, parseDurationToSeconds, getCategoryFromPath } from '@/analytics/meditation';
+import { useAuth } from '@/contexts/AuthContext';
+import { trackMeditationEvent } from '@/analytics/meditation';
+import { lerGuardadas, tirarDasGuardadas, type Guardada } from '@/utils/guardadas';
 
-interface Meditacao {
-  id: string;
-  title: string;
-  duration: string;
-  audioUrl: string;
-  image: string;
-  category: string;
-  gradient: string;
-}
-
+/**
+ * Guardadas (set/2026): as meditações que a pessoa guardou no player, da mais
+ * recente para a mais antiga. Tocar abre o player; "Tirar" remove. Antes: três
+ * meditações fixas, iguais para todo mundo, em cartões de vidro.
+ */
 export default function Favoritos() {
   const navigate = useNavigate();
-  const [favoritos, setFavoritos] = useState<Meditacao[]>([
-    {
-      id: 'blessing_1',
-      title: 'Meditação Bênção dos centros de energia',
-      duration: '7 min',
-      audioUrl: '/audio/bencao-centros-energia.mp3',
-      image: '/images/meditacao-bencao-energia.webp',
-      category: 'Dr. Joe Dispenza',
-      gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)',
-    },
-    {
-      id: 'blessing_2',
-      title: 'Meditação para sintonizar novos potenciais',
-      duration: '5 min',
-      audioUrl: '/audio/sintonizar-novos-potenciais-v3.mp3',
-      image: '/images/meditacao-novos-potenciais.webp',
-      category: 'Dr. Joe Dispenza',
-      gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #3D6BB8 20%, #3358A3 40%, #2A478E 60%, #213779 80%, #182864 100%)',
-    },
-    {
-      id: 'blessing_8',
-      title: 'Meditação do Sono',
-      duration: '15 min',
-      audioUrl: '/audio/meditacao-sono.mp3',
-      image: '/images/reino/capa-adormeca.webp',
-      category: 'Sono',
-      gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
-    },
-  ]);
+  const { user } = useAuth();
+  const uid = user?.id ?? null;
+  const [guardadas, setGuardadas] = useState<Guardada[]>(() => lerGuardadas(uid));
 
-  const handlePlayMeditation = (meditacao: Meditacao) => {
-    // Inferir categoria do nome da categoria
-    const categoryMap: Record<string, string> = {
-      'Dr. Joe Dispenza': 'dr_joe_dispenza',
-      'Sono': 'sono',
-      'Introdução': 'introducao',
-    };
-    const category = categoryMap[meditacao.category] || 'unknown';
-
+  const tocar = (g: Guardada) => {
     navigate('/app/meditation-player', {
       state: {
         meditation: {
-          id: meditacao.id,
-          title: meditacao.title,
-          duration: meditacao.duration,
-          audioUrl: meditacao.audioUrl,
-          imageUrl: meditacao.image,
-          backgroundMusic: 'Cristais',
-          gradient: meditacao.gradient,
-          category,
+          id: g.id,
+          title: g.title,
+          duration: g.duration,
+          audioUrl: g.audioUrl,
+          imageUrl: g.imageUrl,
+          gradient: g.gradient,
+          category: g.category,
           isPremium: false,
         },
         returnTo: '/app/configuracoes',
-      }
+      },
     });
   };
 
-  const handleRemoveFavorite = (id: string) => {
-    const meditacao = favoritos.find(fav => fav.id === id);
-    if (!meditacao) return;
-
-    // Inferir categoria
-    const categoryMap: Record<string, string> = {
-      'Dr. Joe Dispenza': 'dr_joe_dispenza',
-      'Sono': 'sono',
-      'Introdução': 'introducao',
-    };
-    const category = categoryMap[meditacao.category] || 'unknown';
-
-    // Track Unfavorited
-    const payload = {
-      meditation_id: meditacao.id,
-      meditation_title: meditacao.title,
-      category,
+  const tirar = (g: Guardada) => {
+    trackMeditationEvent('Front-end: Meditation Unfavorited', {
+      meditation_id: g.id,
+      meditation_title: g.title,
+      category: g.category || 'unknown',
       source: 'settings' as const,
-    };
-    trackMeditationEvent('Front-end: Meditation Unfavorited', payload);
-
-    setFavoritos(favoritos.filter(fav => fav.id !== id));
+    });
+    tirarDasGuardadas(uid, g.id);
+    setGuardadas(lerGuardadas(uid));
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Favoritos</h2>
-        <p className="text-sm text-gray-600">
-          Suas meditações e conteúdos favoritos em um só lugar.
-        </p>
-      </div>
+    <div>
+      <h2 className="reino-corpo__titulo reino-conta__titulo">Guardadas</h2>
 
-      {favoritos.length === 0 ? (
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-12 shadow-sm text-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-              <Heart size={32} className="text-gray-400" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                Nenhum favorito ainda
-              </h3>
-              <p className="text-sm text-gray-600">
-                Adicione meditações aos seus favoritos para acessá-las rapidamente
-              </p>
-            </div>
-          </div>
+      {guardadas.length === 0 ? (
+        <div className="reino-dias__vazio">
+          <p>Nada guardado ainda. No player, toque em Guardar e a meditação aparece aqui.</p>
+          <button type="button" className="reino-placa" style={{ marginTop: 16 }} onClick={() => navigate('/app/programas')}>
+            Ver as trilhas <span aria-hidden="true">→</span>
+          </button>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {favoritos.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-shadow"
-            >
-              <div
-                className="w-20 h-20 rounded-xl bg-cover bg-center flex-shrink-0"
-                style={{ backgroundImage: `url(${item.image})` }}
-              />
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 text-sm md:text-base truncate">
-                  {item.title}
-                </h3>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-gray-500">{item.duration}</span>
-                  <span className="text-xs text-gray-400">•</span>
-                  <span className="text-xs text-gray-500">{item.category}</span>
-                </div>
-              </div>
-              <button
-                onClick={() => handlePlayMeditation(item)}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-[#E3F5FF] hover:bg-[#D0EEFF] transition-colors flex-shrink-0"
-              >
-                <Play size={18} className="text-[#1C2350] fill-[#1C2350] ml-0.5" />
+        <ul className="reino-sumario reino-guardadas">
+          {guardadas.map((g) => (
+            <li key={g.id} className="reino-guardadas__item">
+              <button type="button" className="reino-guardadas__tocar" onClick={() => tocar(g)}>
+                <span className="reino-guardadas__capa reino-rasgo-b" aria-hidden="true">
+                  <img src={g.imageUrl} alt="" loading="lazy" />
+                </span>
+                <span className="reino-sessao__texto">
+                  <span className="reino-sumario__t">{g.title}</span>
+                  <span className="reino-sessao__descricao">{g.duration}</span>
+                </span>
               </button>
-              <button
-                onClick={() => handleRemoveFavorite(item.id)}
-                className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
-              >
-                <Heart size={18} className="text-red-500 fill-red-500" />
+              <button type="button" className="reino-guardadas__tirar" onClick={() => tirar(g)}>
+                Tirar
               </button>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

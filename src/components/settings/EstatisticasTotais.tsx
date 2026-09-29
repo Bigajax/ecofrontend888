@@ -1,181 +1,108 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { MOCK_PRACTICES, MOCK_TOTALS } from './mockStatsData';
+import { useMemo, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { PincelProgresso } from '@/components/reino/ReinoScene';
+import { estadoDoCaminho, fraseDoCaminho, lerDiasDePratica } from '@/utils/caminhoReino';
+import { conquistas } from '@/utils/conquistas';
+import { getTodayDate, toLocalDateKey } from '@/utils/dataLocal';
 
+const DIAS_DA_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
+/**
+ * Seus dias (set/2026): o caminho no reino, o mês com os dias em que houve
+ * prática e o que foi feito em cada programa, tudo lido do aparelho. Antes:
+ * números de exemplo fixos (outubro de 2025) e um "insight" igual para todos.
+ */
 export default function EstatisticasTotais() {
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date(2025, 9, 1));
+  const { user } = useAuth();
+  const uid = user?.id ?? null;
+  const hoje = getTodayDate();
+  const [mes, setMes] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
 
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-  };
+  const dias = useMemo(() => new Set(lerDiasDePratica(uid)), [uid]);
+  const caminho = estadoDoCaminho(dias.size);
+  const feitos = useMemo(() => conquistas(uid), [uid]);
 
-  const prevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  };
+  const celulas = useMemo(() => {
+    const lista: (Date | null)[] = [];
+    const primeiro = new Date(mes.getFullYear(), mes.getMonth(), 1);
+    for (let i = 0; i < primeiro.getDay(); i++) lista.push(null);
+    const ultimo = new Date(mes.getFullYear(), mes.getMonth() + 1, 0).getDate();
+    for (let d = 1; d <= ultimo; d++) lista.push(new Date(mes.getFullYear(), mes.getMonth(), d));
+    return lista;
+  }, [mes]);
 
-  const getMonthDays = (date: Date): Date[] => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const days: Date[] = [];
-
-    const startDayOfWeek = firstDay.getDay();
-    for (let i = 0; i < startDayOfWeek; i++) {
-      days.push(new Date(year, month, -startDayOfWeek + i + 1));
-    }
-
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-      days.push(new Date(year, month, day));
-    }
-
-    return days;
-  };
-
-  const monthDays = getMonthDays(currentMonth);
-  const monthName = currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const noMes = celulas.filter((d) => d && dias.has(toLocalDateKey(d))).length;
+  const nomeBruto = mes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const nomeDoMes = nomeBruto.charAt(0).toUpperCase() + nomeBruto.slice(1);
+  const agora = new Date();
+  const ehMesAtual = mes.getFullYear() === agora.getFullYear() && mes.getMonth() === agora.getMonth();
+  const mudarMes = (delta: number) => setMes(new Date(mes.getFullYear(), mes.getMonth() + delta, 1));
 
   return (
-    <div className="space-y-10">
-      {/* BLOCO A: Cabeçalho */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900">Estatísticas totais</h2>
-        <p className="text-sm text-gray-600">
-          Acompanhe sua sequência e sua presença ao longo do mês.
-        </p>
-        <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 border border-amber-200">
-          <span className="text-sm font-medium text-amber-900">
-            Sequência atual: {MOCK_TOTALS.sequenciaAtual} dias
-          </span>
-        </div>
-      </div>
+    <div className="reino-dias">
+      <h2 className="reino-corpo__titulo reino-conta__titulo">Seus dias</h2>
 
-      {/* BLOCO B: Calendário mensal */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm">
-        {/* Header do mês */}
-        <div className="flex items-center justify-between mb-6">
-          <button
-            onClick={prevMonth}
-            className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ChevronLeft size={20} className="text-gray-600" />
+      <p className="reino-dias__frase">{fraseDoCaminho(caminho)}</p>
+      <PincelProgresso value={caminho.valor} className="reino-dias__pincel" />
+
+      <section className="reino-dias__mes" aria-label={`Dias de prática em ${nomeDoMes}`}>
+        <div className="reino-dias__mes-topo">
+          <button type="button" className="reino-dias__seta" onClick={() => mudarMes(-1)} aria-label="Mês anterior">
+            ←
           </button>
-          <h3 className="text-lg font-semibold text-gray-900 capitalize">
-            {monthName}
-          </h3>
+          <p className="reino-dias__mes-nome">{nomeDoMes}</p>
           <button
-            onClick={nextMonth}
-            className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+            type="button"
+            className="reino-dias__seta"
+            onClick={() => mudarMes(1)}
+            disabled={ehMesAtual}
+            aria-label="Próximo mês"
           >
-            <ChevronRight size={20} className="text-gray-600" />
+            →
           </button>
         </div>
-
-        {/* Dias da semana */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
-          {weekDays.map((day) => (
-            <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
-              {day}
-            </div>
+        <div className="reino-dias__grade" role="grid">
+          {DIAS_DA_SEMANA.map((d, i) => (
+            <span key={`s${i}`} className="reino-dias__semana" aria-hidden="true">
+              {d}
+            </span>
           ))}
-        </div>
-
-        {/* Grade dos dias */}
-        <div className="grid grid-cols-7 gap-2">
-          {monthDays.map((d, idx) => {
-            const dateString = d.toISOString().split('T')[0];
-            const dayPractices = MOCK_PRACTICES[dateString] || [];
-            const isCurrentMonth = d.getMonth() === currentMonth.getMonth();
-
+          {celulas.map((d, i) => {
+            if (!d) return <span key={`v${i}`} />;
+            const chave = toLocalDateKey(d);
+            const praticou = dias.has(chave);
             return (
-              <div
-                key={idx}
-                className={`min-h-[70px] p-2 rounded-xl border flex flex-col items-center justify-between ${
-                  !isCurrentMonth
-                    ? 'border-gray-100 bg-gray-50 opacity-40'
-                    : dayPractices.length > 0
-                    ? 'border-blue-200 bg-blue-50'
-                    : 'border-gray-200 bg-white'
-                }`}
+              <span
+                key={chave}
+                className={`reino-dias__dia${praticou ? ' is-pratica' : ''}${chave === hoje ? ' is-hoje' : ''}`}
+                aria-label={`${d.getDate()}${praticou ? ', com prática' : ''}`}
               >
-                <span className={`text-sm font-medium ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}`}>
-                  {d.getDate()}
-                </span>
-                {isCurrentMonth && dayPractices.length > 0 && (
-                  <div className="flex gap-1 mt-1">
-                    {dayPractices.includes('meditacao') && (
-                      <span className="w-3 h-3 rounded-full bg-blue-500" />
-                    )}
-                    {dayPractices.includes('aneis') && (
-                      <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                    )}
-                    {dayPractices.includes('enriquece') && (
-                      <span className="w-3 h-3 rounded-full bg-amber-400" />
-                    )}
-                    {dayPractices.includes('reflexao') && (
-                      <span className="w-3 h-3 rounded-full bg-violet-400" />
-                    )}
-                  </div>
-                )}
-              </div>
+                {d.getDate()}
+              </span>
             );
           })}
         </div>
-      </div>
-
-      {/* BLOCO C: Cards de totais */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm">
-          <div className="text-3xl font-bold text-gray-900">{MOCK_TOTALS.meditacoes}</div>
-          <div className="text-xs uppercase tracking-wide text-gray-500 mt-1">
-            Meditações concluídas
-          </div>
-        </div>
-
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm">
-          <div className="text-3xl font-bold text-gray-900">{MOCK_TOTALS.aneisDias}</div>
-          <div className="text-xs uppercase tracking-wide text-gray-500 mt-1">
-            Dias com Anéis da Disciplina
-          </div>
-        </div>
-
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm">
-          <div className="text-3xl font-bold text-gray-900">{MOCK_TOTALS.enriquece}</div>
-          <div className="text-xs uppercase tracking-wide text-gray-500 mt-1">
-            Passos de Quem Pensa Enriquece
-          </div>
-        </div>
-
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm">
-          <div className="text-3xl font-bold text-gray-900">{MOCK_TOTALS.reflexoes}</div>
-          <div className="text-xs uppercase tracking-wide text-gray-500 mt-1">
-            Sessões de reflexão
-          </div>
-        </div>
-
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm">
-          <div className="text-3xl font-bold text-gray-900">{MOCK_TOTALS.maiorSequencia}</div>
-          <div className="text-xs uppercase tracking-wide text-gray-500 mt-1">
-            Maior sequência de dias
-          </div>
-        </div>
-
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm">
-          <div className="text-3xl font-bold text-gray-900">{MOCK_TOTALS.sequenciaAtual}</div>
-          <div className="text-xs uppercase tracking-wide text-gray-500 mt-1">
-            Sequência atual
-          </div>
-        </div>
-      </div>
-
-      {/* BLOCO D: Insight da Eco */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm">
-        <h4 className="text-sm font-semibold text-gray-900 mb-2">Insight da Eco</h4>
-        <p className="text-sm text-gray-600 leading-relaxed">
-          Você esteve mais presente aos domingos e mantém uma boa energia emocional ao iniciar a semana.
+        <p className="reino-dias__legenda">
+          {noMes === 0 ? 'Nenhum dia de prática neste mês.' : `${noMes} ${noMes === 1 ? 'dia' : 'dias'} de prática neste mês.`}
         </p>
-      </div>
+      </section>
+
+      <p className="reino-rotulo">Em cada caminho</p>
+      {feitos.length === 0 ? (
+        <p className="reino-dias__vazio">Ainda nada por aqui. O primeiro passo de cada caminho é sem pagar.</p>
+      ) : (
+        <ul className="reino-sumario">
+          {feitos.map((f) => (
+            <li key={f.texto} className="reino-dias__feito">
+              {f.texto}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="reino-dias__nota">Contado neste aparelho.</p>
     </div>
   );
 }

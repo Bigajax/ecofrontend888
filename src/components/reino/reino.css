@@ -4675,3 +4675,211 @@
 .reino-teste .reino-sessao:disabled {
   cursor: default;
 }
+
+/* ── Sua conta: Seus dias, Guardadas, Assinatura; aviso de guardada no player (set/2026) ── */
+.reino-dias__frase {
+  margin: 0;
+  font: 400 20px/1.35 var(--r-display);
+  color: var(--r-fg);
+}
+.reino-dias__pincel {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: 12px;
+  margin: 10px 0 26px;
+}
+.reino-dias__mes {
+  max-width: 420px;
+  margin-bottom: 28px;
+}
+.reino-dias__mes-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.reino-dias__mes-nome {
+  margin: 0;
+  font: 400 17px var(--r-display);
+}
+.reino-dias__seta {
+  padding: 4px 8px;
+  border: 0;
+  background: none;
+  color: var(--r-fg);
+  font: 500 16px var(--r-ui);
+  cursor: pointer;
+}
+.reino-dias__seta:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.reino-dias__grade {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  text-align: center;
+}
+.reino-dias__semana {
+  padding: 4px 0;
+  font: 400 11.5px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-dias__dia {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font: 400 13px var(--r-mono);
+  color: var(--r-fg2);
+  border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%;
+}
+.reino-dias__dia.is-pratica {
+  background: var(--r-ocre);
+  color: var(--r-anil);
+  font-weight: 600;
+}
+.reino-dias__dia.is-hoje {
+  box-shadow: inset 0 0 0 1.5px var(--r-anil);
+}
+.reino-dias__legenda,
+.reino-dias__nota {
+  margin: 10px 0 0;
+  font: 400 12.5px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-dias__feito {
+  padding: 12px 0;
+  font: 400 17px/1.3 var(--r-display);
+}
+.reino-dias__vazio {
+  color: var(--r-fg2);
+  font: 400 15px/1.55 var(--r-ui);
+}
+.reino-dias__vazio p {
+  margin: 0;
+}
+.reino-guardadas__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.reino-guardadas__tocar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-guardadas__tocar:hover .reino-sumario__t {
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 4px;
+}
+.reino-guardadas__capa {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+}
+.reino-guardadas__capa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reino-guardadas__tirar,
+.reino-assinatura__link {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg2);
+  font: 500 14px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 5px;
+  cursor: pointer;
+}
+.reino-guardadas__tirar:hover,
+.reino-assinatura__link:hover {
+  color: var(--r-fg);
+  text-decoration-color: var(--r-ocre);
+}
+.reino-assinatura__plano {
+  margin: 4px 0 18px;
+  font: 400 24px/1.25 var(--r-display);
+  color: var(--r-fg);
+}
+.reino-assinatura__texto {
+  max-width: 460px;
+  margin: 0 0 20px;
+  color: var(--r-fg2);
+  font: 400 15px/1.55 var(--r-ui);
+}
+.reino-assinatura__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+  margin-top: 8px;
+}
+.reino-assinatura__erro {
+  margin: 12px 0 0;
+  color: #8a3b2a;
+  font: 400 14px/1.5 var(--r-ui);
+}
+.reino-assinatura__motivos {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 6px;
+}
+.reino-assinatura__motivo {
+  padding: 11px 14px;
+  border: 1px solid var(--r-trilho);
+  border-radius: 3px 7px 4px 8px;
+  background: none;
+  color: var(--r-fg);
+  font: 500 15px var(--r-ui);
+  text-align: left;
+  cursor: pointer;
+}
+.reino-assinatura__motivo[aria-checked='true'] {
+  border-color: var(--r-anil);
+  box-shadow: inset 3px 0 0 var(--r-ocre);
+}
+.reino-assinatura__outro {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--r-trilho);
+  border-radius: 3px 7px 4px 8px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--r-fg);
+  font: 400 15px/1.5 var(--r-ui);
+  resize: vertical;
+}
+.reino-guardada {
+  position: fixed;
+  top: 84px;
+  left: 50%;
+  z-index: 100;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 2px;
+  max-width: calc(100% - 32px);
+  padding: 10px 16px 10px 14px;
+  border-left: 3px solid #edb85a;
+  background: #f4f1e8;
+  color: #1c2350;
+  box-shadow: 0 3px 0 -1px rgba(28, 35, 80, 0.18);
+  font: 500 14px 'Figtree', system-ui, sans-serif;
+}
+.reino-guardada__titulo {
+  font: 400 12.5px 'IBM Plex Mono', ui-monospace, monospace;
+  color: #4b5070;
+}

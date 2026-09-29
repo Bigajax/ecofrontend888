@@ -21,8 +21,8 @@ import '@/components/reino/reino.css';
  */
 const MENU = [
   { id: 'configuracoes', label: 'Seus dados' },
-  { id: 'estatisticas', label: 'Seu progresso' },
-  { id: 'favoritos', label: 'Favoritos' },
+  { id: 'estatisticas', label: 'Seus dias' },
+  { id: 'favoritos', label: 'Guardadas' },
   { id: 'assinatura', label: 'Assinatura' },
 ] as const;
 
