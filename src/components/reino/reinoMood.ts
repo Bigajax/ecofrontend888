@@ -16,8 +16,38 @@ export function getBrasiliaHour(now: Date = new Date()): number {
   return Number(hour);
 }
 
-export function getReinoMood(now: Date = new Date()): ReinoMood {
-  const hour = getBrasiliaHour(now);
+const PREVIA_KEY = 'eco.reino.humor';
+
+/**
+ * Prévia dos humores, só em dev: /app?humor=amanhecer|entardecer|noite vale
+ * para o app inteiro (cabeçalho, barra, carregamento) e fica guardado na aba
+ * enquanto você navega; ?humor=auto volta para a hora real.
+ */
+function humorDePrevia(): ReinoMood | null {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return null;
+  try {
+    const param = new URLSearchParams(window.location.search).get('humor');
+    if (param === 'auto') {
+      sessionStorage.removeItem(PREVIA_KEY);
+      return null;
+    }
+    const valor = param ?? sessionStorage.getItem(PREVIA_KEY);
+    if (valor === 'amanhecer' || valor === 'entardecer' || valor === 'noite') {
+      if (param) sessionStorage.setItem(PREVIA_KEY, valor);
+      return valor;
+    }
+  } catch {
+    // sem sessionStorage: segue a hora
+  }
+  return null;
+}
+
+export function getReinoMood(now?: Date): ReinoMood {
+  if (!now) {
+    const previa = humorDePrevia();
+    if (previa) return previa;
+  }
+  const hour = getBrasiliaHour(now ?? new Date());
   if (hour >= 5 && hour < 12) return 'amanhecer';
   if (hour >= 12 && hour < 20) return 'entardecer';
   return 'noite';

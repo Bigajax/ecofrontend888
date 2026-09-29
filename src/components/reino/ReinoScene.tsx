@@ -1,3 +1,6 @@
+import { ASTRO } from './astroFormas';
+import type { ReinoMood } from './reinoMood';
+
 /**
  * O reino é um quadro só: cada tela mostra um recorte do mesmo panorama.
  * Recortes em pixels da imagem original (2172×724): [x, y, largura, altura].
@@ -66,17 +69,15 @@ export function ReinoPintura({ regiao, foco = '50% 50%', className }: ReinoPintu
 }
 
 /** A assinatura do reino: um astro amarelo imperfeito, pintado à mão. */
-export function Astro({ className }: { className?: string }) {
+/** O astro da logo: sol, sol se pondo ou lua, conforme a hora (ver astroFormas). */
+export function Astro({ className, mood = 'amanhecer' }: { className?: string; mood?: ReinoMood }) {
+  const f = ASTRO[mood];
   return (
-    <svg viewBox="0 0 40 40" className={className} aria-hidden="true" focusable="false">
-      <path
-        d="M20.6 9.2c5.9.3 10.5 5 10.1 11.2-.4 6.1-5.5 10.3-11.3 9.9-5.6-.4-10-5.3-9.5-11 .4-5.8 4.9-10.4 10.7-10.1Z"
-        fill="#EDB85A"
-      />
-      <path d="M15.2 16.8c2.6-3 7.1-3.3 9.6.3" fill="none" stroke="#F6D48C" strokeWidth="2.2" strokeLinecap="round" />
-      <g stroke="#EDB85A" strokeWidth="2.5" strokeLinecap="round">
-        <path d="M20.4 2.8v4.6M19.7 32.9l.3 4.3M3.2 20.6l4.7-.3M32.4 19.8h4.4M8.1 8.9l3.2 2.9M28.9 28.2l2.8 3.3M31.9 8.2l-3.1 3.2M11.6 28.6l-3.3 2.6" />
-      </g>
+    <svg viewBox="0 0 120 120" className={className} aria-hidden="true" focusable="false">
+      <path d={f.raios} fill="none" stroke="#EDB85A" strokeWidth={mood === 'noite' ? 9 : 7} strokeLinecap="round" />
+      <path d={f.corpo} fill="#EDB85A" />
+      {f.brilho && <path d={f.brilho} fill="none" stroke="#F6D48C" strokeWidth={6} strokeLinecap="round" />}
+      {f.horizonte && <path d={f.horizonte} fill="none" stroke="currentColor" strokeWidth={5} strokeLinecap="round" />}
     </svg>
   );
 }

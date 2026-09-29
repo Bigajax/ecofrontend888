@@ -44,7 +44,7 @@ export default function HomeHeader() {
       <header className="reino-corpo reino-cabecalho" data-mood={mood}>
         <div className="reino-cabecalho__linha">
           <button type="button" className="reino-cabecalho__marca" onClick={() => navigate('/app')}>
-            <Astro className="reino-cabecalho__astro" />
+            <Astro className="reino-cabecalho__astro" mood={mood} />
             Ecotopia
           </button>
 
