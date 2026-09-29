@@ -51,9 +51,9 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
     h1Pre: 'Tem uma mente que ',
     h1Mark: 'não desliga',
     h1Pos: '.',
-    lead: 'Como 846 pessoas já fizeram: 7 noites, 5 a 10 minutos cada, pra tirar o corpo do modo alerta.',
+    lead: '7 noites guiadas, de 5 a 10 minutos cada, para tirar o corpo do modo alerta.',
     cta: 'Iniciar a noite 1 · grátis',
-    microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
+    microcopyPrefix: 'Noite 1 grátis · ',
   },
   // Variante "acorda cansado": ataca a QUALIDADE do sono (dorme mas não
   // descansa), dor distinta das outras duas. Mesmo padrão de CTA/microcopy de
@@ -64,9 +64,9 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
     h1Pre: 'E acordou ',
     h1Mark: 'destruído',
     h1Pos: '?',
-    lead: '8 horas na cama e você acorda como se não tivesse dormido. 846 pessoas reaprenderam a descansar de verdade: 7 noites, 5 a 10 minutos cada.',
+    lead: '8 horas na cama e você acorda como se não tivesse dormido. 7 noites guiadas, de 5 a 10 minutos cada, para reaprender a descansar.',
     cta: 'Quero acordar descansado',
-    microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
+    microcopyPrefix: 'Noite 1 grátis · ',
   },
   // Variante "convite/conduz": espelha o hero da experiência (/sono/experiencia)
   // e o criativo — "Deite-se. O resto a gente conduz." Message match puro do
@@ -83,7 +83,7 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
     h1Pos: '.',
     lead: 'Uma sequência de meditações guiadas para desacelerar a mente, relaxar o corpo e preparar sua noite sem remédio.',
     cta: 'Comece pela Noite 1 grátis',
-    microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
+    microcopyPrefix: 'Noite 1 grátis · ',
   },
   // Default (tráfego frio): mata a objeção nº 1 do público (remédio/dependência).
   // Era 'durma_rapido' ("Durma mais rápido em apenas 7 noites") — renomeado p/
@@ -94,9 +94,9 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
     h1Pre: 'Dormir bem ',
     h1Mark: 'sem remédio',
     h1Pos: '.',
-    lead: '846 pessoas reensinaram o corpo a desligar sozinho. 7 noites, 5 a 10 minutos cada, sem tarja preta nem dependência.',
-    cta: 'Começar meus 7 dias grátis',
-    microcopyPrefix: 'Sem cobrança hoje · ',
+    lead: '7 noites guiadas, de 5 a 10 minutos cada, para o corpo reaprender a desligar. Sem tarja preta nem dependência.',
+    cta: 'Começar pela Noite 1 grátis',
+    microcopyPrefix: 'Noite 1 grátis · ',
   },
 };
 

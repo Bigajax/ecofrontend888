@@ -35,8 +35,8 @@ describe("useSonoHeroVariant", () => {
 
     expect(result.current.variant).toBe("sem_remedio");
     expect(result.current.h1Mark).toBe("sem remédio");
-    expect(result.current.cta).toBe("Começar meus 7 dias grátis");
-    expect(result.current.microcopyPrefix).toBe("Sem cobrança hoje · ");
+    expect(result.current.cta).toBe("Começar pela Noite 1 grátis");
+    expect(result.current.microcopyPrefix).toBe("Noite 1 grátis · ");
     expect(registerSonoHeroVariant).toHaveBeenCalledWith("sem_remedio");
     expect(trackHeadlineExibida).toHaveBeenCalledWith({ variant: "sem_remedio" });
   });
@@ -79,7 +79,7 @@ describe("useSonoHeroVariant", () => {
     expect(result.current.h1Line1).toBe("Deite-se. Coloque os fones.");
     expect(result.current.h1Mark).toBe("conduz");
     expect(result.current.cta).toBe("Comece pela Noite 1 grátis");
-    expect(result.current.microcopyPrefix).toBe("7 dias grátis · R$ 0 hoje · ");
+    expect(result.current.microcopyPrefix).toBe("Noite 1 grátis · ");
     expect(sessionStorage.getItem(STORAGE_KEY)).toBe("deite_se");
     expect(registerSonoHeroVariant).toHaveBeenCalledWith("deite_se");
   });
