@@ -243,7 +243,7 @@
           '<path fill="#EDB85A" d="' + a.corpo + '"/>' +
           (a.brilho ? '<path fill="none" stroke="#F6D48C" stroke-width="4" stroke-linecap="round" d="' + a.brilho + '"/>' : '') +
           '</svg>' +
-          '<svg viewBox="0 0 240 12" width="180" height="12" preserveAspectRatio="none" aria-hidden="true" style="margin-top:10px">' +
+          '<svg viewBox="0 0 240 12" width="180" height="12" preserveAspectRatio="none" aria-hidden="true" style="margin-top:' + (h >= 12 && h < 20 ? '-38px' : '10px') + '">' +
           '<path fill="none" stroke="' + c.linha + '" stroke-width="2.2" stroke-linecap="round" style="stroke-dasharray:240;stroke-dashoffset:240;animation:rH 2.6s ease-in-out infinite" d="M4 7.2C40 3.6 82 9.4 122 6.2s78-4.2 114 1.4"/></svg>' +
           '<p style="margin:20px 0 0;font:400 22px/1.25 \'Young Serif\',Georgia,serif;color:' + c.fg + '">Abrindo o reino</p>';
       })();

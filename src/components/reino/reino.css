@@ -2761,3 +2761,7 @@
     grid-template-columns: 1fr;
   }
 }
+/* à tarde o sol está se pondo: o pé dele encosta na linha do horizonte */
+.reino-carregando[data-mood='entardecer'] .reino-carregando__astro {
+  margin-bottom: -48px;
+}
