@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, Rea
 import { useAuth } from './AuthContext';
 import * as ringsApi from '@/api/ringsApi';
 import { getTodayDate, diasEntre } from '@/utils/dataLocal';
+import { registrarPratica } from '@/utils/caminhoReino';
 import type {
   JornadaMeta,
   DailyRitual,
@@ -373,6 +374,8 @@ export function RingsProvider({ children }: { children: ReactNode }) {
     // "Começar o ritual de hoje" até recarregar.
     setCurrentRitual(completed);
     saveRituals(updated, userId);
+
+    registrarPratica(userId, 'aneis');
 
     // Recalculate progress (optimistic)
     const newProgress = calculateProgress(updated, userId);

@@ -1,3 +1,4 @@
+import { LinhaDoCaminho } from '@/components/reino/CaminhoNoReino';
 import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -230,6 +231,9 @@ export default function HomeReinoHero({
           <button type="button" className="reino-placa" onClick={c.onPlaca}>
             {c.placa} <span aria-hidden="true">→</span>
           </button>
+
+          {/* O caminho no reino: quantos dias de prática e o próximo marco */}
+          <LinhaDoCaminho className="reino-hero__caminho" />
 
           <h2 className="reino-rotulo reino-hero__secao">{c.secao}</h2>
           <ol className="reino-sumario">

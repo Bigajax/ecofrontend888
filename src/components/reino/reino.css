@@ -3851,3 +3851,85 @@
   justify-content: space-between;
   margin-top: 36px;
 }
+
+/* ── O caminho no reino: a linha de progresso global (set/2026) ── */
+.reino-caminho {
+  display: grid;
+  gap: 6px;
+  max-width: 460px;
+}
+.reino-caminho__frase {
+  margin: 0;
+  font: 400 16px/1.45 var(--r-ui);
+  color: var(--r-anil);
+}
+.reino-hero .reino-caminho__frase {
+  color: var(--r-fg);
+}
+.reino-caminho__pincel {
+  display: block;
+  width: 100%;
+  height: 12px;
+}
+.reino-caminho__marco {
+  margin: 0;
+  font: 400 12px var(--r-mono);
+  letter-spacing: 0.04em;
+  color: var(--r-fg2);
+}
+.reino-hero__caminho {
+  margin-top: 22px;
+}
+
+/* O próximo caminho: o convite do programa seguinte (set/2026) */
+.reino-proximo {
+  margin-top: 26px;
+  padding: 18px 0 0;
+  border-top: 1px dashed var(--r-trilho);
+  max-width: 460px;
+}
+.reino-proximo .reino-rotulo {
+  margin: 0;
+}
+.reino-proximo__nome {
+  margin: 6px 0 0;
+  font: 400 clamp(22px, 3.4vw, 28px) / 1.15 var(--r-display);
+  color: var(--r-fg, var(--r-anil));
+}
+.reino-proximo__sobre {
+  margin: 6px 0 0;
+  color: var(--r-fg2);
+  font: 400 15px/1.5 var(--r-ui);
+}
+.reino-proximo .reino-placa {
+  margin-top: 16px;
+}
+
+/* Fim do Protocolo do Sono, no reino (set/2026) */
+.reino-sono-fim.reino-hero {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  clip-path: none;
+  padding: 32px 16px;
+}
+.reino-sono-fim__miolo {
+  max-width: 520px;
+}
+.reino-sono-fim__astro {
+  width: 72px;
+  height: auto;
+  color: var(--r-fg);
+}
+.reino-sono-fim__rever {
+  margin-top: 22px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg);
+  font: 500 14px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}

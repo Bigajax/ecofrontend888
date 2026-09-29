@@ -14,6 +14,7 @@ import {
 import { Astro, PincelProgresso } from '@/components/reino/ReinoScene';
 import { getReinoMood } from '@/components/reino/reinoMood';
 import SeloDoAnel from './SeloDoAnel';
+import ProximoCaminho from '@/components/reino/ProximoCaminho';
 import '@/components/reino/reino.css';
 
 interface RitualCompletionProps {
@@ -67,6 +68,7 @@ export default function RitualCompletion({ onBackHome }: RitualCompletionProps) 
         </div>
 
         {(fechouAnel || travessia) && <SeloDoAnel anel={anelFeito} rituais={allRituals} />}
+        {travessia && !isGuest && <ProximoCaminho atual="aneis" />}
 
         <div className="reino-ritual__acoes">
           {isGuest ? (

@@ -1,3 +1,4 @@
+import { registrarPratica } from '@/utils/caminhoReino';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Play, Pause, SkipBack, SkipForward, Heart, Music, Volume2 } from 'lucide-react';
@@ -56,6 +57,7 @@ export default function MeditationPlayerPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isGuestMode, isVipUser, isPremiumUser, isTrialActive } = useAuth();
+  const praticaRegistradaRef = useRef(false);
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   // Protocolo Sono agora é premium (assinatura). CTA → trial, não mais compra avulsa.
@@ -831,6 +833,12 @@ export default function MeditationPlayerPage() {
 
       // Write 80% completion marker for program sequence tracking
       if (audio.duration > 0 && (audio.currentTime / audio.duration) >= 0.80 && meditationData.id) {
+        // Ouvir até 80% é um dia de prática no caminho do reino (uma vez por sessão;
+        // o registro em si já é um por dia).
+        if (!praticaRegistradaRef.current) {
+          praticaRegistradaRef.current = true;
+          registrarPratica(user?.id, meditationData.id.startsWith('abundancia') ? 'abundancia' : 'meditacao');
+        }
         const markerKey = `eco.meditation.completed80pct.${meditationData.id}`;
         if (!localStorage.getItem(markerKey)) {
           localStorage.setItem(markerKey, 'true');

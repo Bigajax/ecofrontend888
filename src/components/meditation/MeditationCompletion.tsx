@@ -1,3 +1,4 @@
+import { LinhaDoCaminho } from '@/components/reino/CaminhoNoReino';
 /**
  * Meditation Completion Screen
  *
@@ -231,13 +232,9 @@ export default function MeditationCompletion({
           </h1>
           <p className="reino-conclusao__sessao">{meditationTitle}</p>
 
-          {!streakLoading && currentStreak > 0 && (
-            <div className="reino-nota reino-conclusao__sequencia">
-              <p>
-                {currentStreak} {currentStreak === 1 ? 'dia seguido' : 'dias seguidos'} no reino.
-              </p>
-            </div>
-          )}
+          {/* O caminho no reino (dias de prática e o próximo marco), no lugar do
+              antigo "N dias seguidos", que só contava meditação e não dizia para onde. */}
+          <LinhaDoCaminho className="reino-conclusao__sequencia" />
 
           {showSonoJourney && sonoJourney && <SonoNightsJourney {...sonoJourney} />}
 

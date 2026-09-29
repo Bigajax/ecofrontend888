@@ -1,3 +1,4 @@
+import ProximoCaminho from '@/components/reino/ProximoCaminho';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HomeHeader from '@/components/home/HomeHeader';
@@ -495,13 +496,13 @@ export default function DrJoeDispenzaPage() {
             </h2>
             <p className="reino-corpo__sobre">Sua mente já não é a mesma.</p>
             <p className="reino-drjoe__numeros">
-              {(cyclesCompleted + 1) * totalCount} dias de prática · {cyclesCompleted + 1} ciclo
+              {(cyclesCompleted + 1) * totalCount} práticas feitas · {cyclesCompleted + 1} ciclo
               {cyclesCompleted + 1 > 1 ? 's' : ''} completo{cyclesCompleted + 1 > 1 ? 's' : ''}
             </p>
             <button type="button" className="reino-placa" onClick={handleStartNextCycle}>
               Iniciar o ciclo {cyclesCompleted + 2} <span aria-hidden="true">→</span>
             </button>
-            <p className="reino-corpo__sobre">O aprendizado é diário e constante.</p>
+            <ProximoCaminho atual="drjoe" />
           </div>
         </div>
       )}

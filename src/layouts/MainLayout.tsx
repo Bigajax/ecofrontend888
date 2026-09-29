@@ -1,3 +1,4 @@
+import { FolhaDoMarco } from '@/components/reino/CaminhoNoReino';
 // src/layouts/MainLayout.tsx
 import React, { useEffect } from 'react';
 import '@/components/reino/reino-app.css';
@@ -86,6 +87,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <>
       {/* Banner de modo convidado — visível apenas para guests */}
       {isGuestMode && <GuestModeBanner />}
+      {/* A folha de quando um marco do caminho é alcançado, em qualquer tela do app */}
+      <FolhaDoMarco />
 
       {/* AUTO = TopBar no mobile / Sidebar no desktop - Apenas para ChatPage e outras páginas */}
       {showOldHeader && (

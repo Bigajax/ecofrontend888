@@ -1,3 +1,4 @@
+import ProximoCaminho from '@/components/reino/ProximoCaminho';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HomeHeader from '@/components/home/HomeHeader';
@@ -343,6 +344,7 @@ export default function IntroducaoMeditacaoPage() {
                 {heroCTALabel} <span aria-hidden="true">→</span>
               </button>
             )}
+            {completedCount === totalCount && <ProximoCaminho atual="intro" />}
           </ReinoChegada>
 
           <div className="reino-pagina">

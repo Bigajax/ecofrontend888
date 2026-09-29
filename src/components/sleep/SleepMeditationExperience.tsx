@@ -1,3 +1,5 @@
+import ProximoCaminho from '@/components/reino/ProximoCaminho';
+import { Astro } from '@/components/reino/ReinoScene';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
@@ -52,37 +54,7 @@ import {
 // Steel blue-gray          → labels, secondary accents
 // Ivory/warm white         → headline italic highlight
 // Emerald green            → completed/success states
-const T = {
-  amber:       '#C9922A',
-  amberLight:  '#D4A847',
-  amberGlow:   'rgba(212,168,71,',
-  ivory:       '#F0E3C0',
-  steel:       'rgba(148,163,184,',   // slate-400 base
-  steelSolid:  '#94A3B8',
-  bg0:         '#060609',
-  bg1:         '#08080C',
-  bg2:         '#0B0A10',
-};
 
-// ── Guest "app store" palette — noite fria de lavanda + uma luz quente ────────
-// Usada nas seções do funil guest (/sono/experiencia): card featured, benefícios
-// e carrossel das noites. O calor (orb) marca só o que é ação/destino.
-const P = {
-  light:  '#C4B5FD',           // roxo claro
-  deep:   '#7C3AED',           // violeta profundo
-  lilac:  '#C7B8F0',           // luar (texto destaque)
-  orb:    '#F0C4E8',           // único acento quente (play, noite ativa)
-  glow:   'rgba(124,58,237,',  // glow roxo — fechar com alpha + ')'
-  night0: '#0C0920',           // base da página guest (costura com o hero)
-};
-
-// Paid/VIP: full access. Others: only free nights (night 1).
-function isNightAccessible(night: ProtocolNight, isPaid: boolean, isVip: boolean): boolean {
-  if (isVip || isPaid) return true;
-  return night.isFree;
-}
-
-const SUBSCRIPTION_PATH = '/app/subscription/demo';
 
 interface GuestProgressData {
   time: number;
@@ -574,60 +546,25 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   };
 
   // ── Completion Screen ──────────────────────────────────────────
+  // No reino (set/2026): a noite, o astro, o que foi feito e o próximo caminho.
+  // Antes: degradê, emoji de lua e "Explorar outros programas" sem direção.
   if (showCompletion) {
     return (
-      <MotionConfig reducedMotion="user">
-      <div
-        className="font-primary flex flex-col items-center justify-center px-6 text-center"
-        style={{
-          minHeight: '100dvh',
-          background: `linear-gradient(160deg, ${T.bg0} 0%, ${T.bg1} 40%, ${T.bg2} 100%)`,
-          backgroundColor: 'var(--bg-primary)',
-        }}
-      >
-        <motion.div
-          className="max-w-sm w-full"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 70, damping: 20 }}
-        >
-          <div className="text-6xl mb-6">🌙</div>
-          <h1 className="font-display text-[28px] font-bold text-white sm:text-[32px] mb-4 leading-tight">
-            Protocolo Concluído
+      <section className="reino-hero reino-sono-fim" data-mood="noite" aria-labelledby="sono-fim-titulo">
+        <div className="reino-sono-fim__miolo">
+          <Astro className="reino-sono-fim__astro" mood="noite" />
+          <h1 id="sono-fim-titulo" className="reino-hero__ola">
+            As sete noites foram feitas.
           </h1>
-          <p className="text-[15px] text-white/55 leading-relaxed mb-8">
-            Você recondicionou seu sistema para o descanso.<br />
-            Agora você possui ferramentas para dormir sem depender do áudio.
+          <p className="reino-hero__pergunta">
+            Você ensinou o corpo a sair do alerta. As noites continuam aqui para quando precisar.
           </p>
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={() => navigate('/app')}
-              className="w-full rounded-full px-6 py-3.5 text-[15px] font-bold transition-all hover:scale-105 active:scale-95"
-              style={{
-                background: `linear-gradient(135deg, ${P.light} 0%, ${P.deep} 100%)`,
-                color: '#0D1120',
-                boxShadow: `0 6px 24px ${P.glow}0.30)`,
-              }}
-            >
-              Explorar outros programas
-            </button>
-            <button
-              onClick={() => navigate(SUBSCRIPTION_PATH)}
-              className="w-full rounded-full border px-6 py-3.5 text-[15px] font-semibold text-white/70 transition-all hover:text-white active:scale-95"
-              style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)' }}
-            >
-              Conhecer o Plano Completo
-            </button>
-          </div>
-          <button
-            onClick={() => setShowCompletion(false)}
-            className="mt-6 text-[12px] text-white/30 underline underline-offset-2"
-          >
-            Ver protocolo novamente
+          <ProximoCaminho atual="sono" />
+          <button type="button" className="reino-sono-fim__rever" onClick={() => setShowCompletion(false)}>
+            Ver as noites de novo
           </button>
-        </motion.div>
-      </div>
-      </MotionConfig>
+        </div>
+      </section>
     );
   }
 

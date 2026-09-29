@@ -1,3 +1,4 @@
+import { registrarPratica } from '@/utils/caminhoReino';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ChevronLeft, BookOpen, Share2, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -415,6 +416,7 @@ export default function DiarioEstoicoPage() {
   const markDayAsRead = useCallback((dayNumber: number) => {
     // Avoid duplicates
     if (readDays.has(dayNumber)) return;
+    registrarPratica(user?.id, 'diario');
 
     setReadDays((prev) => {
       const newSet = new Set(prev).add(dayNumber);

@@ -1,3 +1,5 @@
+import ProximoCaminho from '@/components/reino/ProximoCaminho';
+import { registrarPratica } from '@/utils/caminhoReino';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProgram } from '@/contexts/ProgramContext';
@@ -42,6 +44,7 @@ export default function RiquezaMentalProgram() {
   // Enquanto o passo salvo não volta, nada de relatar progresso: o passo 0 do mount
   // sobrescrevia o progresso guardado (e o backend) antes da retomada.
   const [stepRestored, setStepRestored] = useState(false);
+  const [concluiuAgora, setConcluiuAgora] = useState(false);
 
   // Retomada local (vale para visitante também): o passo sai do progresso já salvo.
   useEffect(() => {
@@ -209,6 +212,7 @@ export default function RiquezaMentalProgram() {
     }
 
     if (currentStep < TOTAL_STEPS - 1) {
+      registrarPratica(user?.id, 'riqueza');
       setCurrentStep(currentStep + 1);
       // Scroll removido - mantém posição da tela
     }
@@ -230,16 +234,15 @@ export default function RiquezaMentalProgram() {
     setIsCompleting(true);
     try {
       // Update to 100% completion
-      await updateProgress(100, 'Sessão concluída! 🎉');
+      await updateProgress(100, 'Sessão concluída');
 
       // Complete program (clears local state and marks as complete in backend)
       await completeProgram();
 
       // Show success message
-      toast.success('Programa concluído com sucesso! 🎉', {
-        duration: 4000,
-        icon: '🎉',
-      });
+      toast.success('Sessão concluída. Ela fica guardada em Minhas sessões.', { duration: 4000 });
+      registrarPratica(user?.id, 'riqueza');
+      setConcluiuAgora(true);
 
       // Switch to history tab to show the completed session
       setActiveTab('history');
@@ -378,6 +381,8 @@ export default function RiquezaMentalProgram() {
           </>
         ) : (
           <div style={{ marginTop: 24 }}>
+            {/* Logo depois de concluir: o próximo caminho antes do histórico */}
+            {concluiuAgora && <ProximoCaminho atual="riqueza" />}
             <RiquezaMentalHistory currentEnrollmentId={ongoingProgram?.enrollmentId} refreshTrigger={historyRefreshTrigger} />
           </div>
         )}

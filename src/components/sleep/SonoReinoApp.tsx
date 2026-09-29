@@ -1,3 +1,4 @@
+import ProximoCaminho from '@/components/reino/ProximoCaminho';
 import { useNavigate } from 'react-router-dom';
 import HomeHeader from '@/components/home/HomeHeader';
 import { PincelProgresso, ReinoPintura } from '@/components/reino/ReinoScene';
@@ -79,6 +80,7 @@ export default function SonoReinoApp({
               <p className="reino-sono__contagem">
                 {completedCount === 7 ? 'Todas as noites feitas.' : `${completedCount} de 7 noites feitas`}
               </p>
+              {completedCount === 7 && <ProximoCaminho atual="sono" />}
               <ol className="reino-sumario">
                 {PROTOCOL_NIGHTS.map((night) => {
                   const feita = completedNights.has(night.night);
