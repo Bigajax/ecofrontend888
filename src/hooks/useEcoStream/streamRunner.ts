@@ -1897,7 +1897,9 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
       })();
     } catch (error) {
       clearTypingWatchdog();
-      clearWarningTimer();
+      // clearWarningTimer não existe neste escopo (é criado e limpo dentro do
+      // bloco da leitura). Chamá-lo aqui lançava um ReferenceError por cima do
+      // erro original (set/2026).
       inflightControllers.delete(normalizedClientId);
 
       // Verificar se é erro benigno que não deve rejeitar a Promise

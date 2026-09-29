@@ -98,6 +98,28 @@ function trackExperienciaCompletaOnce(guestId: string, source: string): void {
   fbqCustom('ExperienciaCompleta', { content_name: 'Protocolo do Sono', source });
 }
 
+// ── Guest "app store" palette — noite fria de lavanda + uma luz quente ────────
+// Usada nas seções do funil guest (/sono/experiencia): card featured, benefícios
+// e carrossel das noites. O calor (orb) marca só o que é ação/destino.
+const P = {
+  light:  '#C4B5FD',           // roxo claro
+  deep:   '#7C3AED',           // violeta profundo
+  lilac:  '#C7B8F0',           // luar (texto destaque)
+  orb:    '#F0C4E8',           // único acento quente (play, noite ativa)
+  glow:   'rgba(124,58,237,',  // glow roxo — fechar com alpha + ')'
+  night0: '#0C0920',           // base da página guest (costura com o hero)
+};
+
+/**
+ * A noite abre para quem pagou (ou VIP); sem isso, só as noites grátis. Voltou
+ * em set/2026: tinha sido apagada junto com a tela antiga de "Protocolo
+ * Concluído", e tocar numa noite quebrava a página.
+ */
+function isNightAccessible(night: ProtocolNight, isPaid: boolean, isVip: boolean): boolean {
+  if (isVip || isPaid) return true;
+  return night.isFree;
+}
+
 interface SleepMeditationExperienceProps {
   mode: 'app' | 'guest';
 }
