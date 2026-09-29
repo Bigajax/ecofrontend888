@@ -158,3 +158,147 @@
   border: 0;
   box-shadow: none;
 }
+
+/* ===== Chat no reino: bilhete em anil (quem escreve) e carta no papel (a Eco) ===== */
+.reino-bolha--minha {
+  padding: 10px 14px 11px;
+  border-radius: 3px 10px 3px 10px;
+  background: #1c2350;
+  color: #f4f1e8;
+  font: 400 15.5px/1.55 'Figtree', 'Segoe UI', system-ui, sans-serif;
+}
+.reino-bolha--eco {
+  padding: 3px 0 0;
+  background: transparent;
+  color: #1c2350;
+  font: 400 16px/1.75 'Figtree', 'Segoe UI', system-ui, sans-serif;
+}
+.reino-bolha--eco :where(strong) {
+  font-weight: 600;
+}
+.reino-bolha--eco :where(a) {
+  text-decoration: underline;
+  text-decoration-color: #edb85a;
+  text-underline-offset: 3px;
+}
+.reino-bolha__eco {
+  flex-shrink: 0;
+  display: inline-flex;
+  margin-top: 2px;
+  color: #1c2350;
+}
+.reino-bolha__aviso {
+  display: grid;
+  grid-template-columns: 3px 1fr;
+  column-gap: 12px;
+  color: #4b5070;
+  font: 400 13px/1.55 'IBM Plex Mono', ui-monospace, monospace;
+}
+.reino-bolha__aviso::before {
+  content: '';
+  grid-row: 1 / span 2;
+  background: #edb85a;
+  border-radius: 2px;
+}
+.reino-bolha__aviso > * {
+  grid-column: 2;
+}
+.reino-bolha__tentar {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1c2350;
+  font: 500 13px 'Figtree', system-ui, sans-serif;
+  text-decoration: underline;
+  text-decoration-color: #edb85a;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.reino-pensando {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #1c2350;
+}
+.reino-pensando__linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reino-pensando__casa {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.reino-pensando__rotulo {
+  font: 400 16px/1.2 'Young Serif', Georgia, serif;
+  white-space: nowrap;
+}
+.reino-pensando__tempo {
+  font: 400 12px 'IBM Plex Mono', ui-monospace, monospace;
+  color: #5b6080;
+  font-variant-numeric: tabular-nums;
+}
+.reino-pensando__frase {
+  font: 400 12.5px/1.4 'IBM Plex Mono', ui-monospace, monospace;
+  color: #5b6080;
+}
+/* a caixa de escrever do chat: papel, borda em tinta, foco em ocre embaixo */
+.reino-folha-escrever {
+  border: 1.5px solid rgba(28, 35, 80, 0.35);
+  border-radius: 6px;
+  background: #fbf9f3;
+  box-shadow: 0 3px 0 -1px rgba(28, 35, 80, 0.12);
+  transition: border-color 200ms, box-shadow 200ms;
+}
+.reino-folha-escrever:focus-within {
+  border-color: #1c2350;
+  box-shadow: 0 3px 0 -1px #edb85a;
+}
+.reino-folha-escrever__botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid rgba(28, 35, 80, 0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: #1c2350;
+  cursor: pointer;
+}
+.reino-folha-escrever__botao:hover {
+  border-color: #1c2350;
+}
+.reino-folha-escrever__botao.is-enviar {
+  border-color: #1c2350;
+  background: #1c2350;
+  color: #f4f1e8;
+}
+.reino-folha-escrever__botao:focus-visible {
+  outline: 2px solid #edb85a;
+  outline-offset: 2px;
+}
+/* cabeço da página do chat e a casa no estado vazio */
+.reino-chat-cabeco {
+  justify-content: space-between;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 18px 32px 10px;
+  border-bottom: 1px dashed rgba(28, 35, 80, 0.2);
+  font: 400 11px 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5b6080;
+}
+.reino-chat-casa {
+  width: 184px;
+  height: 124px;
+  object-fit: cover;
+  object-position: 30% 55%;
+}
+.reino-chat-cabeco > span {
+  font: inherit;
+  color: inherit;
+}

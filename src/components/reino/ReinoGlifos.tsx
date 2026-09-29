@@ -123,3 +123,66 @@ export function GlifoPerfil({ ativo, className }: GlifoProps) {
     </Base>
   );
 }
+
+/** Memórias: o caderno aberto, com uma folha prensada na página da direita. */
+export function GlifoMemorias({ ativo, className }: GlifoProps) {
+  return (
+    <Base className={className}>
+      <path d="M14 8.2c-2.8-1.9-6.2-2.3-9.6-1.6v14.6c3.4-.6 6.8-.2 9.6 1.7 2.8-1.9 6.2-2.3 9.6-1.7V6.6c-3.4-.7-6.8-.3-9.6 1.6Z" />
+      <path d="M14 8.2v14.4" opacity={0.55} />
+      <path
+        d="M17.2 17.6c.4-3.2 2-5.3 4.3-6-.2 3.1-1.8 5.3-4.3 6Z"
+        fill={acento(ativo)}
+        stroke={ativo ? OCRE : 'currentColor'}
+        strokeWidth={1.3}
+      />
+      <path d="M7.2 11.2c1.4-.2 2.8 0 4 .5M7.2 14.4c1.4-.2 2.8 0 4 .5" opacity={0.6} />
+    </Base>
+  );
+}
+
+/** Perfil emocional: o espelho de mão, com o reflexo quente. */
+export function GlifoEspelho({ ativo, className }: GlifoProps) {
+  return (
+    <Base className={className}>
+      <path d="M14.2 4.6c3.8.1 6.3 3 6.2 6.6-.1 3.7-2.8 6.3-6.4 6.2-3.6-.1-6.2-2.9-6.1-6.5.1-3.6 2.7-6.4 6.3-6.3Z" />
+      <path d="M13.9 17.4c-.2 2 .1 4 .6 6" />
+      <path d="M11.8 23.6c1.5-.4 3-.4 4.4.1" />
+      <path d="M11.6 9.6c.6-1.4 1.8-2.3 3.2-2.5" stroke={acento(ativo)} strokeWidth={2} />
+    </Base>
+  );
+}
+
+/** Relatórios: três pinceladas de alturas diferentes sobre a linha do chão. */
+export function GlifoRelatorio({ ativo, className }: GlifoProps) {
+  return (
+    <Base className={className}>
+      <path d="M3.6 22.8c6.8-.5 13.9.4 20.8-.2" />
+      <path d="M8.2 20.6c-.2-3.2 0-6 .4-8.4" strokeWidth={2.6} />
+      <path d="M14.1 20.4c-.3-4.9 0-9.6.5-13.6" strokeWidth={2.6} stroke={acento(ativo)} />
+      <path d="M20 20.6c-.1-2.2.1-4.2.4-5.8" strokeWidth={2.6} />
+    </Base>
+  );
+}
+
+/** Feedback: a pena de escrever. */
+export function GlifoPena({ ativo, className }: GlifoProps) {
+  return (
+    <Base className={className}>
+      <path d="M22.6 4.8c-6.8.9-11.9 5.8-13.5 13.3l2.5-.4c5.4-1.8 9.4-6.6 11-12.9Z" fill={ativo ? OCRE : 'none'} />
+      <path d="M5.4 23.2 15.8 11" />
+    </Base>
+  );
+}
+
+/** Sair: a porta entreaberta, com a luz do lado de fora. */
+export function GlifoPorta({ ativo, className }: GlifoProps) {
+  return (
+    <Base className={className}>
+      <path d="M8 23.4V5.2h11.6v18.2" />
+      <path d="M8 5.2l6.4 2.2v18l-6.4-2" fill={acento(ativo)} fillOpacity={ativo ? 1 : 0} />
+      <path d="M12.2 15.4v.1" strokeWidth={2.4} />
+      <path d="M4.6 23.6c6.6-.4 13.2.3 19.8-.1" />
+    </Base>
+  );
+}

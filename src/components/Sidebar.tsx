@@ -1,8 +1,15 @@
-import { useState, useEffect } from 'react';
+import type { ComponentType } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MessageCircle, BookOpen, Brain, BarChart3, Settings, X, LogOut } from 'lucide-react';
-import { motion } from 'framer-motion';
 import clsx from 'clsx';
+import {
+  GlifoEco,
+  GlifoMemorias,
+  GlifoEspelho,
+  GlifoRelatorio,
+  GlifoPena,
+  GlifoPorta,
+} from '@/components/reino/ReinoGlifos';
+import '@/components/reino/reino.css';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -12,17 +19,22 @@ interface SidebarProps {
   isGuest?: boolean;
 }
 
-const navItems = [
-  { id: 'chat', label: 'Chat', icon: MessageCircle, path: '/app/chat' },
-  { id: 'memories', label: 'Memórias', icon: BookOpen, path: '/app/memory' },
-  { id: 'profile', label: 'Perfil', icon: Brain, path: '/app/memory/profile' },
-  { id: 'reports', label: 'Relatórios', icon: BarChart3, path: '/app/memory/report' },
-  // { id: 'settings', label: 'Config', icon: Settings, path: '/app/configuracoes' },
+type Glifo = ComponentType<{ ativo: boolean; className?: string }>;
+
+/**
+ * Os cômodos da Casa da Eco: a conversa e o que a Eco guarda de você.
+ * Glifos a pincel no lugar dos ícones de linha; a aba ativa acende em ocre.
+ */
+const navItems: { id: string; label: string; curto: string; glifo: Glifo; path: string }[] = [
+  { id: 'chat', label: 'Conversa', curto: 'Conversa', glifo: GlifoEco, path: '/app/chat' },
+  { id: 'memories', label: 'Memórias', curto: 'Memórias', glifo: GlifoMemorias, path: '/app/memory' },
+  { id: 'profile', label: 'Perfil emocional', curto: 'Perfil', glifo: GlifoEspelho, path: '/app/memory/profile' },
+  { id: 'reports', label: 'Relatórios', curto: 'Relatórios', glifo: GlifoRelatorio, path: '/app/memory/report' },
 ];
 
 const FEEDBACK_URL = 'https://feedback777.vercel.app/';
 
-export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', onLogout, isGuest = false }: SidebarProps) {
+export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', onLogout }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -51,77 +63,48 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
   if (variant === 'mobile') {
     return (
       <>
-        {/* Backdrop */}
-        {isOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden"
-            onClick={onClose}
-            aria-hidden="true"
-          />
-        )}
+        {isOpen && <div className="fixed inset-0 z-40 bg-[#10153a]/40 lg:hidden" onClick={onClose} aria-hidden="true" />}
 
-        {/* Mobile Drawer */}
         <aside
           className={clsx(
-            'fixed top-0 left-0 bottom-0 z-50 w-72 bg-[#E9E6DC] border-r border-[#1C2350]/15 lg:hidden',
-            'transform transition-transform duration-300 ease-out',
+            'reino-corpo reino-casa-lateral is-gaveta lg:hidden',
             isOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-black/5">
-            <span className="text-xl font-semibold text-gray-900">ECO</span>
-            <button
-              onClick={onClose}
-              className="p-2 -mr-2 rounded-lg hover:bg-black/5 transition-colors"
-              aria-label="Fechar menu"
-            >
-              <X className="w-5 h-5 text-gray-700" />
+          <div className="reino-casa-lateral__topo">
+            <span className="reino-rotulo">ECO.01 · Casa da Eco</span>
+            <button type="button" onClick={onClose} className="reino-chegada__voltar" aria-label="Fechar menu">
+              Fechar
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex flex-col gap-1 p-4">
+          <nav className="reino-casa-lateral__nav" aria-label="Casa da Eco">
             {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = item.path === activePath;
-
+              const Glifo = item.glifo;
+              const ativo = item.path === activePath;
               return (
                 <button
                   key={item.id}
+                  type="button"
                   onClick={() => handleNavigate(item.path)}
-                  className={clsx(
-                    'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
-                    isActive
-                      ? 'bg-eco-baby/10 text-eco-deep'
-                      : 'text-gray-700 hover:bg-black/5'
-                  )}
+                  aria-current={ativo ? 'page' : undefined}
+                  className={clsx('reino-casa-lateral__item is-linha', ativo && 'is-ativo')}
                 >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <Glifo ativo={ativo} className="reino-casa-lateral__glifo" />
+                  <span className="reino-casa-lateral__rotulo">{item.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          {/* Bottom Actions */}
-          <div className="mt-auto border-t border-black/5 p-4 space-y-2">
-            <button
-              onClick={handleFeedback}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-black/5 transition-all"
-            >
-              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-              </svg>
-              <span className="text-sm font-medium">Feedback</span>
+          <div className="reino-casa-lateral__pe">
+            <button type="button" onClick={handleFeedback} className="reino-casa-lateral__item is-linha">
+              <GlifoPena ativo={false} className="reino-casa-lateral__glifo" />
+              <span className="reino-casa-lateral__rotulo">Feedback</span>
             </button>
-
-            <button
-              onClick={handleBackToHome}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-black/5 transition-all"
-            >
-              <LogOut className="w-5 h-5 shrink-0" />
-              <span className="text-sm font-medium">Sair</span>
+            <button type="button" onClick={handleBackToHome} className="reino-casa-lateral__item is-linha">
+              <GlifoPorta ativo={false} className="reino-casa-lateral__glifo" />
+              <span className="reino-casa-lateral__rotulo">Sair</span>
             </button>
           </div>
         </aside>
@@ -129,127 +112,68 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
     );
   }
 
-  // Bottom Nav Mobile (moved to top for better UX)
+  // Barra de cima no celular
   if (variant === 'bottom') {
-    const handleExitToHome = () => {
-      // Volta para HomePage mantendo usuário logado ou modo convidado
-      if (onLogout) {
-        onLogout();
-      }
-    };
-
-    const itemClass =
-      'relative flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 rounded-2xl min-w-[56px] transition-colors duration-200';
-
     return (
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#E9E6DC] border-b border-dashed border-[#1C2350]/20 lg:hidden">
-        <div className="flex items-center justify-around h-14 px-1.5 pt-safe">
+      <nav className="reino-corpo reino-casa-topo lg:hidden" aria-label="Casa da Eco">
+        <div className="reino-casa-topo__lista pt-safe">
           {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = item.path === activePath;
-
+            const Glifo = item.glifo;
+            const ativo = item.path === activePath;
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => handleNavigate(item.path)}
-                aria-current={isActive ? 'page' : undefined}
-                className={itemClass}
+                aria-current={ativo ? 'page' : undefined}
+                className={clsx('reino-casa-lateral__item', ativo && 'is-ativo')}
               >
-                {isActive && (
-                  <motion.span
-                    layoutId="mem-bottom-active"
-                    aria-hidden
-                    className="absolute inset-0 rounded-2xl"
-                    style={{
-                      background: '#F4F1E8',
-                      boxShadow: 'inset 0 0 0 1px rgba(28,35,80,0.35)',
-                    }}
-                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                  />
-                )}
-                <Icon
-                  size={19}
-                  strokeWidth={isActive ? 2.4 : 1.6}
-                  className={clsx('relative z-10 transition-colors duration-200', isActive ? 'text-[#1C2350]' : 'text-[#5B6080]')}
-                />
-                <span className={clsx(
-                  'relative z-10 text-[10px] leading-none text-center transition-colors duration-200',
-                  isActive ? 'font-semibold text-[#1C2350]' : 'font-medium text-[#5B6080]'
-                )}>
-                  {item.label}
-                </span>
+                <Glifo ativo={ativo} className="reino-casa-lateral__glifo" />
+                <span className="reino-casa-lateral__rotulo">{item.curto}</span>
               </button>
             );
           })}
-
-          {/* Botão Sair - leva para homepage */}
-          <button
-            onClick={handleExitToHome}
-            className={clsx(itemClass, 'text-gray-500 hover:text-gray-700')}
-          >
-            <LogOut size={19} strokeWidth={1.6} className="relative z-10 transition-colors duration-200" />
-            <span className="relative z-10 text-[10px] leading-none text-center font-medium">
-              Sair
-            </span>
+          <button type="button" onClick={() => onLogout?.()} className="reino-casa-lateral__item">
+            <GlifoPorta ativo={false} className="reino-casa-lateral__glifo" />
+            <span className="reino-casa-lateral__rotulo">Sair</span>
           </button>
         </div>
       </nav>
     );
   }
 
-  // Desktop Sidebar
+  // Lateral no desktop
   return (
-    <aside className="hidden lg:flex flex-col w-20 xl:w-24 bg-[#E9E6DC] border-r border-dashed border-[#1C2350]/20 shrink-0">
-      <nav className="flex flex-col items-center gap-2 p-3 pt-6 flex-1">
+    <aside className="reino-corpo reino-casa-lateral hidden lg:flex" aria-label="Casa da Eco">
+      <p className="reino-casa-lateral__codigo">ECO.01</p>
+      <nav className="reino-casa-lateral__nav">
         {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = item.path === activePath;
-
+          const Glifo = item.glifo;
+          const ativo = item.path === activePath;
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => handleNavigate(item.path)}
-              className={clsx(
-                'flex flex-col items-center justify-center gap-1.5 w-full py-3 rounded-xl transition-all group',
-                isActive
-                  ? 'bg-eco-baby/10 text-eco-deep'
-                  : 'text-gray-600 hover:bg-black/5 hover:text-gray-900'
-              )}
+              aria-current={ativo ? 'page' : undefined}
+              className={clsx('reino-casa-lateral__item', ativo && 'is-ativo')}
               title={item.label}
             >
-              <Icon className="w-6 h-6 shrink-0" />
-              <span className="text-[10px] font-medium text-center leading-tight">
-                {item.label}
-              </span>
+              <Glifo ativo={ativo} className="reino-casa-lateral__glifo" />
+              <span className="reino-casa-lateral__rotulo">{item.label}</span>
             </button>
           );
         })}
       </nav>
 
-      {/* Bottom Actions - Desktop */}
-      <div className="border-t border-black/5 p-3 space-y-2">
-        <button
-          onClick={handleFeedback}
-          className="flex flex-col items-center justify-center gap-1.5 w-full py-3 rounded-xl text-gray-600 hover:bg-black/5 hover:text-gray-900 transition-all group"
-          title="Feedback"
-        >
-          <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-          </svg>
-          <span className="text-[10px] font-medium text-center leading-tight">
-            Feedback
-          </span>
+      <div className="reino-casa-lateral__pe">
+        <button type="button" onClick={handleFeedback} className="reino-casa-lateral__item" title="Feedback">
+          <GlifoPena ativo={false} className="reino-casa-lateral__glifo" />
+          <span className="reino-casa-lateral__rotulo">Feedback</span>
         </button>
-
-        <button
-          onClick={handleBackToHome}
-          className="flex flex-col items-center justify-center gap-1.5 w-full py-3 rounded-xl text-gray-600 hover:bg-black/5 hover:text-gray-900 transition-all"
-          title="Sair"
-        >
-          <LogOut className="w-6 h-6 shrink-0" />
-          <span className="text-[10px] font-medium text-center leading-tight">
-            Sair
-          </span>
+        <button type="button" onClick={handleBackToHome} className="reino-casa-lateral__item" title="Sair">
+          <GlifoPorta ativo={false} className="reino-casa-lateral__glifo" />
+          <span className="reino-casa-lateral__rotulo">Sair</span>
         </button>
       </div>
     </aside>

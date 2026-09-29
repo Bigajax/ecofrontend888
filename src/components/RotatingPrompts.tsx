@@ -83,11 +83,11 @@ const RotatingPrompts = ({
         onBlur={() => (pauseRef.current = false)}
         className="
           group inline-flex items-center gap-2
-          h-10 px-3.5 rounded-full
+          h-10 px-3.5 rounded-[4px]
           bg-[#F4F1E8]
           border border-[#1C2350]/20
           hover:border-[#1C2350]/45 focus:outline-none
-          focus-visible:ring-2 focus-visible:ring-black/10
+          focus-visible:ring-2 focus-visible:ring-[#EDB85A]
           active:translate-y-[1px] transition
         "
         aria-label={s.label}
@@ -98,8 +98,8 @@ const RotatingPrompts = ({
         {/* indicador sutil de “rotativo” */}
         <span
           className="
-            ml-1 inline-block h-1.5 w-1.5 rounded-full bg-slate-400/70
-            group-hover:bg-slate-500/80
+            ml-1 inline-block h-1.5 w-1.5 rounded-full bg-[#EDB85A]
+            group-hover:bg-[#1C2350]
           "
           aria-hidden
         />

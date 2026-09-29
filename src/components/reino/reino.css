@@ -2391,3 +2391,124 @@
 .reino-rasgo-baixo {
   clip-path: polygon(0% 0%, 100% 0%, 100% 93%, 91% 97%, 79% 94.5%, 66% 98%, 52% 95%, 38% 98.5%, 24% 95.5%, 11% 98.2%, 0% 95%);
 }
+
+/* ===================== Casa da Eco: lateral, barra de cima e gaveta ===================== */
+.reino-casa-lateral {
+  flex-direction: column;
+  width: 96px;
+  flex-shrink: 0;
+  background: var(--r-linho);
+  border-right: 1px dashed var(--r-trilho);
+  padding: 18px 8px 14px;
+}
+.reino-casa-lateral__codigo {
+  margin: 0 0 14px;
+  text-align: center;
+  font: 400 10.5px var(--r-mono);
+  letter-spacing: 0.08em;
+  color: var(--r-fg2);
+}
+.reino-casa-lateral__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.reino-casa-lateral__pe {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--r-trilho);
+}
+.reino-casa-lateral__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 10px 2px;
+  border: 0;
+  background: none;
+  color: #5b6080;
+  cursor: pointer;
+}
+.reino-casa-lateral__item:hover {
+  color: var(--r-anil);
+}
+.reino-casa-lateral__glifo {
+  width: 28px;
+  height: 28px;
+}
+.reino-casa-lateral__rotulo {
+  font: 400 12px/1.2 var(--r-display);
+  text-align: center;
+}
+.reino-casa-lateral__item.is-ativo {
+  color: var(--r-anil);
+}
+.reino-casa-lateral__item.is-ativo .reino-casa-lateral__rotulo {
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+/* gaveta do celular */
+.reino-casa-lateral.is-gaveta {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  display: flex;
+  width: 18rem;
+  padding: 16px 18px;
+  transition: transform 300ms ease-out;
+}
+.reino-casa-lateral__topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed var(--r-trilho);
+}
+.reino-casa-lateral__item.is-linha {
+  flex-direction: row;
+  gap: 14px;
+  padding: 12px 4px;
+}
+.reino-casa-lateral__item.is-linha .reino-casa-lateral__rotulo {
+  font-size: 17px;
+  text-align: left;
+}
+/* barra de cima (celular) */
+.reino-casa-topo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--r-linho);
+  border-bottom: 1px dashed var(--r-trilho);
+}
+.reino-casa-topo__lista {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 4px;
+}
+.reino-casa-topo .reino-casa-lateral__item {
+  width: auto;
+  min-width: 56px;
+  gap: 3px;
+  padding: 6px 4px;
+}
+.reino-casa-topo .reino-casa-lateral__glifo {
+  width: 22px;
+  height: 22px;
+}
+.reino-casa-topo .reino-casa-lateral__rotulo {
+  font-size: 11px;
+}

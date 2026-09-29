@@ -43,7 +43,7 @@ type EcoMessageWithAudioProps = {
 const BTN_SIZE = "w-7 h-7 sm:w-8 sm:h-8";
 const ICON_SIZE = "w-[14px] h-[14px] sm:w-4 sm:h-4";
 const ICON_BASE =
-  "text-gray-500/80 transition-colors group-hover:text-gray-900";
+  "text-[#5B6080] transition-colors group-hover:text-[#1C2350]";
 
 const GhostBtn = React.forwardRef<
   HTMLButtonElement,
@@ -53,11 +53,11 @@ const GhostBtn = React.forwardRef<
     {...rest}
     ref={ref}
     className={[
-      "group rounded-xl",
+      "group rounded-md",
       BTN_SIZE,
       "flex items-center justify-center",
-      "hover:bg-gray-100 active:bg-gray-200/80",
-      "focus:outline-none focus:ring-2 focus:ring-gray-300/50",
+      "hover:bg-[#1C2350]/[0.06] active:bg-[#1C2350]/10",
+      "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EDB85A]/70",
       "transition-colors",
       className,
     ]
@@ -116,7 +116,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
     if (sanitized.trim().length > 0) {
       return sanitized;
     }
-    return isStreaming ? "" : "⚠️ Nenhuma resposta da ECO desta vez. Tente novamente.";
+    return isStreaming ? "" : "A Eco não respondeu desta vez. Tente de novo.";
   }, [isStreaming, message.content, message.text]);
   const hasVisibleText = displayText.length > 0;
   const canSpeak = !isUser && hasVisibleText;
@@ -754,7 +754,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
                   aria-label="Curtir resposta"
                   title="Curtir"
                   disabled={feedbackButtonsDisabled}
-                  className={optimisticVote === "up" ? "bg-slate-100" : undefined}
+                  className={optimisticVote === "up" ? "bg-[#1C2350]/[0.08]" : undefined}
                   aria-pressed={optimisticVote === "up"}
                   aria-busy={sendingFeedback && pendingVote === "up"}
                 >
@@ -762,7 +762,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
                     <Loader2 className={`${ICON_SIZE} text-emerald-600 animate-spin`} strokeWidth={1.75} />
                   ) : (
                     <ThumbsUp
-                      className={optimisticVote === "up" ? `${ICON_SIZE} text-emerald-600` : ICON_CLASS}
+                      className={optimisticVote === "up" ? `${ICON_SIZE} text-[#4E6B4A]` : ICON_CLASS}
                       strokeWidth={1.5}
                     />
                   )}
@@ -775,7 +775,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
                     aria-label="Não curtir resposta"
                     title="Não curtir"
                     disabled={feedbackButtonsDisabled}
-                    className={optimisticVote === "down" || showReasons ? "bg-slate-100" : undefined}
+                    className={optimisticVote === "down" || showReasons ? "bg-[#1C2350]/[0.08]" : undefined}
                     aria-pressed={optimisticVote === "down"}
                     aria-busy={sendingFeedback && pendingVote === "down"}
                   >
@@ -783,7 +783,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
                       <Loader2 className={`${ICON_SIZE} text-red-500 animate-spin`} strokeWidth={1.75} />
                     ) : (
                       <ThumbsDown
-                        className={optimisticVote === "down" || showReasons ? `${ICON_SIZE} text-red-500` : ICON_CLASS}
+                        className={optimisticVote === "down" || showReasons ? `${ICON_SIZE} text-[#9B3B2F]` : ICON_CLASS}
                         strokeWidth={1.5}
                       />
                     )}
@@ -817,12 +817,12 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
             )}
 
             <span
-              className={`ml-1 text-[10px] text-gray-400 transition-opacity sm:text-xs ${
+              className={`ml-1 font-mono text-[11px] text-[#5B6080] transition-opacity ${
                 copied ? "opacity-100" : "opacity-0"
               }`}
               aria-live="polite"
             >
-              Copiado!
+              copiado
             </span>
           </div>
 

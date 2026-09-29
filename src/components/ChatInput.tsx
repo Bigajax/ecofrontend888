@@ -187,9 +187,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
       <motion.form
         ref={wrapperRef}
         className="relative w-full"
-        initial={{ y: 40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 120, damping: 18 }}
+        initial={false}
         aria-disabled={isBusy}
         aria-busy={isSending}
         role="group"
@@ -198,9 +196,8 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
       >
         <div
           className={clsx(
-            "flex w-full flex-col gap-1.5 rounded-[22px] border border-[#1C2350]/25 bg-[#F4F1E8] px-4 py-3 transition-colors duration-200",
-            "focus-within:border-[#1C2350]/60 focus-within:ring-2 focus-within:ring-[#EDB85A]/60",
-            "hover:border-eco-line",
+            // Reino: uma folha de papel com a borda em tinta; o foco acende a linha ocre embaixo.
+            "reino-folha-escrever flex w-full flex-col gap-1.5 px-4 py-3",
             isBusy ? "opacity-90" : "",
           )}
         >
@@ -222,7 +219,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
             disabled={isBusy}
             aria-disabled={isBusy}
             aria-label="Mensagem para a Eco"
-            className="w-full min-w-0 max-h-[9.5rem] min-h-[2.75rem] resize-none border-0 bg-transparent px-1 text-[15px] leading-[1.6] text-slate-800 placeholder:text-slate-400/80 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)] sm:text-[16px]"
+            className="w-full min-w-0 max-h-[9.5rem] min-h-[2.75rem] resize-none border-0 bg-transparent px-1 font-sans text-[16px] leading-[1.6] text-[#1C2350] placeholder:text-[#5B6080]/80 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-[#5B6080]/70"
             onKeyDown={(event) => {
               if (
                 event.key === "Enter" &&
@@ -261,11 +258,8 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                   transition={{ duration: 0.16 }}
                   whileTap={{ scale: 0.92 }}
                   className={clsx(
-                    "inline-flex h-9 w-9 items-center justify-center rounded-full text-white transition-shadow duration-200 shadow-md",
-                    "bg-gradient-to-br from-eco-baby to-eco-babyDark",
-                    "hover:shadow-lg",
-                    "focus-visible:ring-2 focus-visible:ring-eco-baby/50 focus-visible:outline-none",
-                    isBusy ? "cursor-not-allowed opacity-70 hover:shadow-md" : null,
+                    "reino-folha-escrever__botao is-enviar",
+                    isBusy ? "cursor-not-allowed opacity-70" : null,
                   )}
                   aria-label="Enviar mensagem"
                   title={isBusy ? "Aguarde a resposta da Eco" : "Enviar mensagem"}
@@ -279,7 +273,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.16 }}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-eco-baby/30 bg-eco-babySoft text-eco-baby"
+                  className="reino-folha-escrever__botao"
                   role="status"
                   aria-label="Eco está respondendo"
                   title="Eco está respondendo"
@@ -298,9 +292,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                   transition={{ duration: 0.16 }}
                   whileTap={{ scale: 0.92 }}
                   className={clsx(
-                    "inline-flex h-9 w-9 items-center justify-center rounded-full border border-eco-baby/30 bg-eco-babySoft text-eco-baby transition-all duration-200 shadow-ecoSm",
-                    "hover:bg-eco-baby/15",
-                    "focus-visible:ring-2 focus-visible:ring-eco-baby/40 focus-visible:outline-none",
+                    "reino-folha-escrever__botao",
                     isBusy
                       ? "cursor-not-allowed opacity-60"
                       : isMicActive

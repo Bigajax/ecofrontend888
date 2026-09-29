@@ -199,7 +199,7 @@ function QuickSuggestionsComp({
             onClick={() => emitPick(s, { source: "pill", index })}
             className={clsx(
               "inline-flex shrink-0 snap-center items-center justify-center gap-2",
-              "rounded-full border",
+              "rounded-[4px] border",
               "bg-[#F4F1E8] border-[#1C2350]/20",
               "text-[#1C2350]",
               "transition-colors duration-200",

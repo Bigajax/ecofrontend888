@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import clsx from "clsx";
 
-import EcoBubbleOneEye from "./EcoBubbleOneEye";
+import { GlifoEco } from "./reino/ReinoGlifos";
 import EcoThinkingIndicator from "./EcoThinkingIndicator";
 import LazyMarkdownRenderer from "./LazyMarkdownRenderer";
 import CollapsibleMessage from "./CollapsibleMessage";
@@ -107,7 +107,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
 
   // sempre mantém a bolha visível quando está streamando
   // usa um espaço não-quebrável como placeholder para garantir altura mínima
-  const fallbackText = "⚠️ Nenhuma resposta da ECO desta vez. Tente novamente.";
+  const fallbackText = "A Eco não respondeu desta vez. Tente de novo.";
   const shouldShowFallback = !isStreaming && normalizedRole === "assistant" && !hasVisibleText;
   const textToShow = hasVisibleText
     ? raw
@@ -178,16 +178,14 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
   const isWatchdogTimeout = message?.status === 'error' && message?.errorReason === 'watchdog_timeout';
   const watchdogTimeoutMessage = "A Eco está demorando mais do que o normal para responder.";
 
+  // Reino: quem escreve deixa um bilhete em tinta anil; a Eco responde como
+  // carta, direto no papel, sem balão.
   const bubbleClass = clsx(
-    "min-w-0 rounded-2xl px-3 py-2.5 text-left leading-relaxed",
-    "text-[15px]",
+    "min-w-0 text-left",
     "max-w-[min(65ch,85vw)]",
     "whitespace-pre-wrap break-words overflow-wrap-anywhere",
-    // Reino: quem escreve usa a tinta anil; a Eco responde no papel, com traço fino.
     "reino-bolha",
-    isUser
-      ? "bg-[#1C2350] text-[#F4F1E8]"
-      : "bg-[#F4F1E8] text-[#1C2350] border border-[#1C2350]/15"
+    isUser ? "reino-bolha--minha" : "reino-bolha--eco"
   );
 
   const wrapperClass = clsx(
@@ -204,13 +202,14 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
     <div className={wrapperClass} role="listitem" aria-live="polite">
       <div className={rowClass}>
         {isEco && (
-          <EcoBubbleOneEye
-            className="mt-0.5 shrink-0"
-            variant="message"
-            size={32}
+          <span
+            className="reino-bolha__eco"
             data-eco-active={isEcoActive ? "true" : undefined}
             data-testid="eco-avatar"
-          />
+            aria-hidden="true"
+          >
+            <GlifoEco ativo className="h-6 w-6" />
+          </span>
         )}
         <div className="flex min-w-0 flex-col">
           {/* Bubble content - optionally wrapped in CollapsibleMessage */}
@@ -229,7 +228,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
           ) : (
             <div className={bubbleClass} data-sender={sender}>
               {showTypingDots ? (
-                <span aria-live="polite" className="inline-flex items-center gap-2 text-gray-600">
+                <span aria-live="polite" className="inline-flex items-center gap-2">
                   <EcoThinkingIndicator compact />
                 </span>
               ) : (
@@ -245,26 +244,26 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
           )}
 
           {showTypingFooter && (
-            <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 italic" role="status" aria-live="polite">
+            <div className="mt-1 flex items-center gap-2 font-mono text-[12px] text-[#5B6080]" role="status" aria-live="polite">
               <span>Eco refletindo...</span>
             </div>
           )}
 
           {finishReasonLabel && (
-            <div className="mt-1 pl-1 text-xs text-gray-400">
-              <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+            <div className="mt-1 pl-1">
+              <span className="inline-flex items-center font-mono text-[11px] text-[#5B6080]">
                 {finishReasonLabel}
               </span>
             </div>
           )}
 
           {isWatchdogTimeout && (
-            <div className="mt-2 rounded-lg border border-yellow-200/60 bg-yellow-50/50 backdrop-blur-sm p-2.5 max-w-[min(65ch,85vw)]">
-              <p className="text-xs text-yellow-900 mb-1.5">{watchdogTimeoutMessage}</p>
+            <div className="reino-bolha__aviso mt-2 max-w-[min(65ch,85vw)]">
+              <p className="mb-1.5">{watchdogTimeoutMessage}</p>
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-medium rounded-md bg-yellow-100 hover:bg-yellow-200 text-yellow-900 transition-colors"
+                  className="reino-bolha__tentar"
                   aria-label="Tentar novamente"
                 >
                   Tentar de novo

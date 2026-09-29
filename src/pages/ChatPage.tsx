@@ -10,7 +10,7 @@ import clsx from 'clsx';
 
 import ChatInput, { ChatInputHandle } from '../components/ChatInput';
 import LoginGateModal from '../components/LoginGateModal';
-import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
+import '@/components/reino/reino.css';
 import EcoThinkingIndicator from '../components/EcoThinkingIndicator';
 import SuggestionChips from '../components/SuggestionChips';
 import MessageList from '../components/MessageList';
@@ -926,6 +926,11 @@ function ChatPage() {
             overscrollBehaviorY: 'contain',
           }}
         >
+          {/* Cabeço de página: onde você está (só no desktop; no celular a barra de cima já diz) */}
+          <div className="reino-chat-cabeco hidden lg:flex">
+            <span>ECO.01 · Casa da Eco</span>
+            <span>a conversa</span>
+          </div>
           <div role="feed" aria-busy={isWaitingForEco || isSendingToEco} className="flex-1">
             <div className="w-full px-4 sm:px-6 lg:px-8">
               <div className="mx-auto flex w-full max-w-3xl flex-col">
@@ -943,7 +948,12 @@ function ChatPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
                       >
-                        <EcoBubbleOneEye size={48} state="idle" />
+                        <img
+                          src="/images/reino/casa-800.webp"
+                          alt=""
+                          decoding="async"
+                          className="reino-chat-casa reino-rasgo-a"
+                        />
                       </motion.div>
 
                       {/* Saudação */}
@@ -1008,11 +1018,11 @@ function ChatPage() {
         {/* Footer Input */}
         <footer
           ref={chatInputWrapperRef}
-          className="relative z-40 w-full border-t px-4 pt-3 sm:px-6 lg:px-8"
+          className="relative z-40 w-full border-t border-dashed px-4 pt-3 sm:px-6 lg:px-8"
           style={{
             ...footerStyle,
             backgroundColor: 'var(--bg-primary)',
-            borderColor: 'var(--neutral-border)',
+            borderColor: 'rgba(28,35,80,0.2)',
           }}
         >
           {showNewMessagesChip && (
@@ -1020,7 +1030,7 @@ function ChatPage() {
               <button
                 type="button"
                 onClick={handleJumpToBottom}
-                className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-eco-line/60 bg-white/80 text-eco-baby shadow-lg backdrop-blur-md transition-all hover:bg-white hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-eco-baby/40 active:scale-95"
+                className="reino-folha-escrever__botao pointer-events-auto bg-[#F4F1E8]"
                 aria-label="Rolar para novas mensagens"
               >
                 <ChevronDown size={20} strokeWidth={2.4} />
