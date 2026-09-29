@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, afterEach, describe, expect, test, vi } from 'vitest';
-import type { EcoEventHandlers, EcoStreamResult } from '../../api/ecoApi';
+import type { EcoEventHandlers, EcoStreamResult } from '../../api/ecoStream/types';
 import type { StartEcoStreamOptions } from '../../api/ecoStream';
 
 let registerStreamHandlers: ((options: StartEcoStreamOptions) => void) | undefined;
@@ -249,26 +249,8 @@ vi.mock('../../lib/mixpanel', () => ({
   },
 }));
 
-vi.mock('../../api/memoriaApi', () => ({
-  buscarMemoriasSemelhantesV2: vi.fn().mockResolvedValue([]),
-  buscarUltimasMemoriasComTags: vi.fn().mockResolvedValue([]),
-}));
-
-vi.mock('../../api/mensagem', () => ({
-  salvarMensagem: vi.fn().mockResolvedValue({
-    id: 'saved-id',
-    conteudo: 'olá',
-    usuario_id: 'user-123',
-  }),
-}));
-
-vi.mock('../../api/ecoApi', () => ({
-  enviarMensagemParaEco: vi.fn(),
-}));
-
 import ChatPage from '../ChatPage';
 import { ChatProvider } from '../../contexts/ChatContext';
-import { enviarMensagemParaEco } from '../../api/ecoApi';
 import mixpanel from '../../lib/mixpanel';
 
 const originalScrollTo = window.HTMLElement.prototype.scrollTo;
@@ -289,9 +271,6 @@ describe('ChatPage typing indicator', () => {
     handlersRef.current = undefined;
     resolveResponse = undefined;
     inflightPromise = undefined;
-
-    const enviarMensagemParaEcoMock = enviarMensagemParaEco as unknown as vi.Mock;
-    enviarMensagemParaEcoMock.mockReset();
 
     registerStreamHandlers = (options) => {
       let chunkIndex = 0;

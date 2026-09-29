@@ -66,7 +66,7 @@ export const updateBanditArms = async (
   options?: CommandOptions,
 ): Promise<void> => {
   await sendAdminCommand("/api/bandit/arms", payload, {
-    method: "POST",
+    method: "PUT",
     ...options,
   });
 };

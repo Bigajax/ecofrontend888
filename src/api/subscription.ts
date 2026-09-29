@@ -2,13 +2,7 @@
 // API client para gerenciamento de assinaturas
 
 import { apiFetchJson, ApiFetchJsonNetworkError, ApiFetchJsonResult } from '../lib/apiFetch';
-import type {
-  CreateSubscriptionRequest,
-  CreateSubscriptionResponse,
-  SubscriptionStatusResponse,
-  PaymentHistory,
-  PlanType,
-} from '../types/subscription';
+import type { SubscriptionStatusResponse } from '../types/subscription';
 
 const SUBSCRIPTION_BASE_PATH = '/api/subscription';
 
@@ -50,71 +44,6 @@ const extractErrorMessage = (data: unknown, fallback: string): string => {
 
   return fallback;
 };
-
-/**
- * Cria uma nova assinatura (essentials, mensal ou anual)
- *
- * @param plan - Tipo do plano ('essentials', 'monthly' ou 'annual')
- * @returns URL do checkout do Mercado Pago e ID da subscription
- *
- * @example
- * ```typescript
- * const { initPoint, id } = await createSubscription('essentials');
- * window.location.href = initPoint; // Redireciona para checkout
- * ```
- */
-export async function createSubscription(
-  plan: PlanType
-): Promise<CreateSubscriptionResponse> {
-  if (plan !== 'essentials' && plan !== 'monthly' && plan !== 'annual') {
-    throw new Error(ERROR_MESSAGES.INVALID_PLAN);
-  }
-
-  // Log the request payload
-  const payload = { plan };
-  console.log('[subscription] Creating subscription with payload:', payload);
-
-  const result = await apiFetchJson(`${SUBSCRIPTION_BASE_PATH}/create-preference`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  // Debug log
-  console.log('[subscription] createSubscription result:', {
-    ok: result.ok,
-    status: result.ok ? (result as any).status : (result as any).status,
-    data: result.data,
-  });
-
-  if (isNetworkError(result)) {
-    throw new Error(ERROR_MESSAGES.NETWORK);
-  }
-
-  if (!result.ok) {
-    // Log full error details
-    console.error('[subscription] Backend error:', {
-      status: (result as any).status,
-      data: result.data,
-    });
-    const message = extractErrorMessage(result.data, ERROR_MESSAGES.SUBSCRIPTION_FAILED);
-    throw new Error(message);
-  }
-
-  const data = result.data as CreateSubscriptionResponse;
-
-  if (!data.initPoint || !data.id) {
-    throw new Error('Resposta inválida do servidor.');
-  }
-
-  return {
-    initPoint: data.initPoint,
-    id: data.id,
-    type: data.type || 'preference',
-  };
-}
 
 /**
  * Helper: sleep com Promise
@@ -248,74 +177,4 @@ export async function reactivateSubscription(): Promise<SubscriptionStatusRespon
   }
 
   return result.data as SubscriptionStatusResponse;
-}
-
-/**
- * Busca histórico de pagamentos do usuário
- *
- * @returns Lista de pagamentos realizados
- */
-export async function getPaymentHistory(): Promise<PaymentHistory[]> {
-  const result = await apiFetchJson(`${SUBSCRIPTION_BASE_PATH}/invoices`, {
-    method: 'GET',
-  });
-
-  if (isNetworkError(result)) {
-    throw new Error(ERROR_MESSAGES.NETWORK);
-  }
-
-  if (!result.ok) {
-    const message = extractErrorMessage(result.data, 'Não foi possível buscar histórico.');
-    throw new Error(message);
-  }
-
-  return (result.data as { payments: PaymentHistory[] }).payments || [];
-}
-
-/**
- * Atualiza método de pagamento da assinatura
- *
- * @param preapprovalId - ID da recorrência no Mercado Pago
- * @returns URL para atualizar método de pagamento
- */
-export async function updatePaymentMethod(
-  preapprovalId: string
-): Promise<{ updateUrl: string }> {
-  // Mercado Pago não tem API direta para update de método
-  // Retorna URL para gerenciar no painel MP
-  const mpDashboardUrl = `https://www.mercadopago.com.br/subscriptions/my-subscriptions`;
-
-  return { updateUrl: mpDashboardUrl };
-}
-
-/**
- * Valida se um cupom de desconto é válido
- *
- * @param couponCode - Código do cupom
- * @returns Desconto aplicável e validade
- */
-export async function validateCoupon(
-  couponCode: string
-): Promise<{ valid: boolean; discount: number; message?: string }> {
-  const result = await apiFetchJson(`${SUBSCRIPTION_BASE_PATH}/validate-coupon`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ couponCode }),
-  });
-
-  if (isNetworkError(result)) {
-    throw new Error(ERROR_MESSAGES.NETWORK);
-  }
-
-  if (!result.ok) {
-    return {
-      valid: false,
-      discount: 0,
-      message: 'Cupom inválido ou expirado',
-    };
-  }
-
-  return result.data as { valid: boolean; discount: number; message?: string };
 }

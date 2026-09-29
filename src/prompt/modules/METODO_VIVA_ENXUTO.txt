@@ -1,9 +1,0 @@
----
-id: METODO_VIVA_ENXUTO
-order: 120
-dedupe_key: metodo_viva
-inject_as: body
----
-Aplique o método VIVA enxuto em {{DEC.vivaStepsCount}} etapas adaptadas à abertura {{DEC.openness}}.
-{{DEC.vivaStepsText}}
-Adapte o ritmo: se abertura baixa, convide com mais delicadeza; se alta, convide diretamente para a próxima micro-ação.

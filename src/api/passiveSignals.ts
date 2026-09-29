@@ -142,7 +142,7 @@ const flushPendingSignals = async () => {
   const eventsToSend = outbox;
   outbox = [];
 
-  const endpoint = buildApiUrl("/signal");
+  const endpoint = buildApiUrl("/api/signal");
   const grouped = new Map<string, NormalizedPassiveSignal[]>();
 
   for (const event of eventsToSend) {
