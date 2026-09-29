@@ -4327,3 +4327,6 @@
 .reino-player__faixa::-webkit-slider-thumb {
   margin-top: -8px;
 }
+.reino-trilha__aqui {
+  white-space: nowrap;
+}

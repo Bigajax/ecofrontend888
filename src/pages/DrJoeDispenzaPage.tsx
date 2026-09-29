@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
-import ReinoChegada, { ReinoSessoes, type ReinoSessao } from '@/components/reino/ReinoChegada';
+import ReinoChegada, { type ReinoSessao } from '@/components/reino/ReinoChegada';
+import TrilhaDeEstacoes from '@/components/reino/TrilhaDeEstacoes';
 import ReinoCarregando from '@/components/reino/ReinoCarregando';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
 import { useDrJoeEntitlement } from '@/hooks/useDrJoeEntitlement';
@@ -419,7 +420,37 @@ export default function DrJoeDispenzaPage() {
           </ReinoChegada>
 
           <div className="reino-pagina">
-            <p className="reino-rotulo">O que a jornada trabalha</p>
+            {/* A jornada como trilha (set/2026): a experiência de intenção e os
+                5 dias como pedras com a pintura de cada sessão, no começo da
+                página, porque é o que a pessoa vem fazer. */}
+            <h2 className="reino-corpo__titulo" id="jornada">
+              A jornada
+            </h2>
+            <p className="reino-corpo__sobre">Uma experiência de intenção e cinco dias. Um passo por dia.</p>
+            <TrilhaDeEstacoes
+              rotulo="A jornada"
+              estacoes={sessoes.map((sessao, i) => ({
+                id: sessao.id,
+                titulo: i === 0 ? 'Criando seu novo potencial' : dias[i - 1].title,
+                sub: i === 0 ? 'a intenção' : `dia ${i}`,
+                meta: sessao.meta,
+                estado:
+                  sessao.estado === 'feita'
+                    ? 'feita'
+                    : sessao.estado === 'proxima'
+                      ? 'agora'
+                      : sessao.estado === 'trancada'
+                        ? 'fechada'
+                        : 'livre',
+                imagem:
+                  i === 0
+                    ? '/images/reino/capa-desperte.webp'
+                    : dias[i - 1].image?.match(/url\("?([^")]+)"?\)/)?.[1],
+              }))}
+              onEscolher={escolher}
+            />
+
+            <p className="reino-rotulo" style={{ marginTop: 40 }}>O que a jornada trabalha</p>
             <ul className="reino-abundancia__lista">
               <li>Neurociência aplicada à transformação mental</li>
               <li>Intenção clara e frequência elevada criando uma nova energia</li>
@@ -474,10 +505,6 @@ export default function DrJoeDispenzaPage() {
               </details>
             </section>
 
-            <p className="reino-rotulo" id="jornada" style={{ marginTop: 40 }}>
-              A jornada
-            </p>
-            <ReinoSessoes sessoes={sessoes} onEscolher={escolher} />
 
             <blockquote className="reino-drjoe__citacao reino-drjoe__fecho">
               "A frequência que você sustenta é a realidade que você cria."
