@@ -203,7 +203,11 @@
          Landing e funil seguem com a tela acima. -->
     <script>
       (function () {
-        if (location.pathname.indexOf('/app') !== 0) return;
+        // Quem está logado (sessão salva do Supabase) vê o reino em qualquer rota;
+        // só o visitante das landings e do funil fica com a tela original.
+        var logado = false;
+        try { logado = !!localStorage.getItem('eco-auth-token'); } catch (e) {}
+        if (location.pathname.indexOf('/app') !== 0 && !logado) return;
         var el = document.getElementById('loading-fallback');
         if (!el) return;
         var h = 20;

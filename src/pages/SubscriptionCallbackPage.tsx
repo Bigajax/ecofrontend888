@@ -4,7 +4,8 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import ReinoCarregando from '@/components/reino/ReinoCarregando';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../contexts/AuthContext';
@@ -154,13 +155,10 @@ export default function SubscriptionCallbackPage() {
       >
         {/* Loading State */}
         {status === 'loading' && (
-          <div className="text-center glass-shell rounded-3xl p-12">
-            <Loader2 className="w-16 h-16 text-[#6EC8FF] mx-auto mb-6 animate-spin" />
-            <h1 className="text-2xl font-display font-normal text-[var(--eco-text)] mb-3">
-              Confirmando pagamento...
-            </h1>
+          <div className="text-center">
+            <ReinoCarregando inline texto="Confirmando o pagamento" />
             <p className="text-[var(--eco-muted)] mb-4">
-              Aguarde enquanto validamos sua assinatura
+              Aguarde enquanto validamos sua assinatura.
             </p>
             {retryCount > 0 && (
               <p className="text-sm text-[var(--eco-muted)]">

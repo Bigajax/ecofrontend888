@@ -12,6 +12,7 @@
 
 import { Suspense } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import ReinoCarregando from '@/components/reino/ReinoCarregando';
 
 // ============================================================================
 // Loading Skeleton
@@ -19,11 +20,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 
 function ChartSkeleton() {
   return (
-    <div className="flex h-full w-full items-center justify-center bg-gray-50 rounded-lg">
-      <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500" />
-        <p className="text-xs text-gray-400">Carregando gráfico...</p>
-      </div>
+    <div className="flex h-full w-full items-center justify-center">
+      <ReinoCarregando inline texto="Desenhando o gráfico" />
     </div>
   );
 }
