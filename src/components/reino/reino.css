@@ -1856,3 +1856,11 @@
   width: 100%;
   height: 100%;
 }
+.reino-aneis__boas-vindas {
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+.reino-aneis__lista {
+  margin: 4px 0 8px;
+  width: 100%;
+}

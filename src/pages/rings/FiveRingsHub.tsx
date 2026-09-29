@@ -5,10 +5,9 @@ import { useProgram } from '@/contexts/ProgramContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { RINGS_ARRAY } from '@/constants/rings';
 import OnboardingModal from '@/components/rings/OnboardingModal';
-import RingCard from '@/components/rings/RingCard';
 import HomeHeader from '@/components/home/HomeHeader';
 import RingsHistory from '@/components/rings/RingsHistory';
-import { ArrowLeft, Lock } from 'lucide-react';
+import ReinoChegada, { ReinoSessoes, type ReinoSessao } from '@/components/reino/ReinoChegada';
 
 export default function FiveRingsHub() {
   const navigate = useNavigate();
@@ -47,7 +46,7 @@ export default function FiveRingsHub() {
       // Update progress with current state
       if (ritualCompleted) {
         // When ritual is 100% complete, mark as finished
-        updateProgress(100, 'Ritual Completo! 🎉');
+        updateProgress(100, 'Ritual completo');
         // Note: completeProgram() will be called automatically when user returns to home
         // or on next mount detection
       } else if (ringResponses > 0) {
@@ -58,183 +57,112 @@ export default function FiveRingsHub() {
     }
   }, [ongoingProgram?.id, currentRitual, ritualCompleted, updateProgress]);
 
+  const aneis: ReinoSessao[] = RINGS_ARRAY.map((ring) => ({
+    id: ring.id,
+    titulo: ring.titlePt,
+    descricao: ring.descriptionPt,
+    meta: ring.subtitlePt,
+    estado: 'livre',
+    detalhe: (
+      <>
+        <p>
+          <strong>A pergunta do dia.</strong> {ring.question}
+        </p>
+        {ring.impactPhrase && <p className="reino-sessao__nota">{ring.impactPhrase}</p>}
+      </>
+    ),
+  }));
+
   return (
-    <div className="min-h-screen font-primary" style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100dvh', color: 'var(--text-primary)' }}>
-      {/* Header */}
+    <div className="reino-corpo page-with-nav" style={{ minHeight: '100dvh' }}>
       <HomeHeader />
 
-      {/* Onboarding Modal */}
-      {showOnboarding && (
-        <OnboardingModal onComplete={completeOnboarding} onDismiss={dismissOnboarding} />
-      )}
+      {showOnboarding && <OnboardingModal onComplete={completeOnboarding} onDismiss={dismissOnboarding} />}
 
-      <main className="page-with-nav relative mx-auto max-w-4xl px-4 py-8 md:px-8 md:py-12">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/app')}
-          className="absolute left-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-[var(--eco-text)] shadow-md border border-[var(--eco-line)] transition-all hover:shadow-lg active:scale-95 md:left-8 md:top-8" style={{ backgroundColor: 'var(--surface-card)' }}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-
-        {/* Header */}
-        <div className="mb-12 space-y-4 pt-16 md:pt-4" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-          <div>
-            <h1 className="font-display text-4xl font-normal text-[var(--eco-text)] md:text-5xl">
-              Cinco Anéis da Disciplina
-            </h1>
-            <p className="mt-2 text-lg text-[var(--eco-muted)]">
-              Um ritual diário para organizar foco, emoção e disciplina.
+      <ReinoChegada
+        mood="amanhecer"
+        imagem="/images/reino/capa-cinco-aneis.webp"
+        foco="center 60%"
+        lugar="TRI.04 · As Trilhas · Miyamoto Musashi"
+        titulo="Cinco Anéis da Disciplina"
+        sobre="Um ritual diário de 2 a 3 minutos para organizar foco, emoção e disciplina: terra, água, fogo, vento e vazio."
+        voltar={{ rotulo: 'Voltar para Hoje', onClick: () => navigate('/app') }}
+      >
+        {ritualCompleted ? (
+          <div className="reino-nota" style={{ marginTop: 18, marginBottom: 0 }}>
+            <p>
+              Ritual de hoje feito.{' '}
+              {isGuest ? 'Crie sua conta para continuar a jornada de 30 dias.' : 'Volte amanhã para manter a disciplina.'}
             </p>
           </div>
+        ) : (
+          <button type="button" className="reino-placa" onClick={() => navigate('/app/rings/ritual')}>
+            Começar o ritual de hoje <span aria-hidden="true">→</span>
+          </button>
+        )}
+        {ritualCompleted && isGuest && (
+          <button type="button" className="reino-placa" onClick={() => navigate('/register?returnTo=/app/rings')}>
+            Criar conta <span aria-hidden="true">→</span>
+          </button>
+        )}
+      </ReinoChegada>
 
-          {/* NOVO: Guest Mode Info Banner */}
-          {isGuest && (
-            <div className="rounded-2xl border-2 border-eco-accent/30 bg-gradient-to-br from-eco-accent/5 to-eco-user/5 p-6 shadow-sm">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-md" style={{ backgroundColor: 'var(--surface-card)' }}>
-                  <Lock size={24} className="text-eco-accent" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-eco-text mb-2">
-                    Experimente o Five Rings
-                  </h3>
-                  <p className="text-sm text-eco-text/80 leading-relaxed mb-3">
-                    Como convidado, você pode experimentar os primeiros 2 dias do programa.
-                    Complete os Anéis da Terra e da Água para sentir a prática.
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-eco-muted">
-                    <span>✓ 2 dias de prática</span>
-                    <span>•</span>
-                    <span>✓ Todos os 5 anéis</span>
-                    <span>•</span>
-                    <span>🔒 28 dias restantes</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tabs */}
-          <div className="flex gap-2 border-b border-eco-line">
-            <button
-              onClick={() => setActiveTab('ritual')}
-              className={`px-6 py-3 font-medium transition-all duration-300 ${
-                activeTab === 'ritual'
-                  ? 'border-b-2 border-eco-user text-eco-user'
-                  : 'text-eco-muted hover:text-eco-text'
-              }`}
-            >
-              Ritual de Hoje
-            </button>
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`px-6 py-3 font-medium transition-all duration-300 ${
-                activeTab === 'history'
-                  ? 'border-b-2 border-eco-user text-eco-user'
-                  : 'text-eco-muted hover:text-eco-text'
-              }`}
-            >
-              Minhas Sessões
-            </button>
+      <div className="reino-pagina">
+        {isGuest && (
+          <div className="reino-nota">
+            <p>
+              Como convidado, você experimenta os primeiros 2 dias com os 5 anéis. Os outros 28 dias ficam com a conta.
+            </p>
           </div>
+        )}
+
+        <div className="reino-filtros" role="tablist" aria-label="Cinco Anéis">
+          <button type="button" role="tab" className="reino-filtro" aria-pressed={activeTab === 'ritual'} aria-selected={activeTab === 'ritual'} onClick={() => setActiveTab('ritual')}>
+            Ritual de hoje
+          </button>
+          <button type="button" role="tab" className="reino-filtro" aria-pressed={activeTab === 'history'} aria-selected={activeTab === 'history'} onClick={() => setActiveTab('history')}>
+            Minhas sessões
+          </button>
         </div>
 
-        {/* Tab Content */}
         {activeTab === 'ritual' ? (
           <>
-            {/* Status Card */}
-            <div className="rounded-2xl border border-[var(--eco-line)] p-6 shadow-sm" style={{ backgroundColor: 'var(--surface-card)' }}>
-            {ritualCompleted ? (
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-[var(--eco-muted)]">Ritual de Hoje</p>
-                  <p className="mt-1 text-xl font-semibold text-[var(--eco-user)]">
-                    Concluído ✅
-                  </p>
-                  <p className="mt-2 text-sm text-[var(--eco-muted)]">
-                    {isGuest
-                      ? 'Crie sua conta para continuar sua jornada de 30 dias.'
-                      : 'Volte amanhã para manter sua disciplina.'}
-                  </p>
-                </div>
-                {isGuest && (
-                  <button
-                    onClick={() => navigate('/register?returnTo=/app/rings')}
-                    className="shrink-0 rounded-lg bg-gradient-to-r from-eco-user to-eco-accent px-6 py-3 font-medium text-white transition-all duration-300 hover:scale-105 active:scale-95"
-                  >
-                    Criar Conta
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-[var(--eco-muted)]">Ritual de Hoje</p>
-                  <p className="mt-1 text-xl font-semibold text-[var(--eco-text)]">
-                    Você ainda não fez o ritual de hoje
-                  </p>
-                  <p className="mt-2 text-sm text-[var(--eco-muted)]">
-                    {isGuest
-                      ? 'Dedique 2-3 minutos para experimentar os primeiros anéis.'
-                      : 'Dedique 2-3 minutos para responder os 5 anéis.'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigate('/app/rings/ritual')}
-                  className="shrink-0 rounded-lg bg-[var(--eco-user)] px-6 py-3 font-medium text-white transition-all duration-300 hover:scale-105 active:scale-95"
-                >
-                  Começar Ritual
+            <p className="reino-rotulo" style={{ marginTop: 28 }}>
+              Os cinco anéis
+            </p>
+            <ReinoSessoes sessoes={aneis} onEscolher={(id) => navigate(`/app/rings/detail/${id}`)} />
+
+            <ul className="reino-biblioteca" style={{ marginTop: 32 }}>
+              <li>
+                <button type="button" className="reino-livro" onClick={() => navigate('/app/rings/timeline')}>
+                  <span className="reino-livro__titulo">Linha do tempo</span>
+                  <span className="reino-livro__sobre">Cada dia de ritual, em ordem.</span>
+                  <span className="reino-livro__acao">Abrir →</span>
                 </button>
-              </div>
-            )}
-            </div>
+              </li>
+              <li>
+                <button type="button" className="reino-livro" onClick={() => navigate('/app/rings/progress')}>
+                  <span className="reino-livro__titulo">Progresso</span>
+                  <span className="reino-livro__sobre">Como cada anel evoluiu com você.</span>
+                  <span className="reino-livro__acao">Abrir →</span>
+                </button>
+              </li>
+            </ul>
 
-            {/* Rings Grid */}
-            <div className="mb-12 grid gap-6 md:grid-cols-2">
-              {RINGS_ARRAY.map((ring) => (
-                <RingCard
-                  key={ring.id}
-                  ring={ring}
-                  onViewMore={() => navigate(`/app/rings/detail/${ring.id}`)}
-                />
-              ))}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-              <button
-                onClick={() => navigate('/app/rings/timeline')}
-                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 active:scale-95" style={{ backgroundColor: 'var(--surface-card)' }}
-              >
-                <span>📅</span>
-                <span>Ver Linha do Tempo</span>
-              </button>
-              <button
-                onClick={() => navigate('/app/rings/progress')}
-                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 active:scale-95" style={{ backgroundColor: 'var(--surface-card)' }}
-              >
-                <span>📊</span>
-                <span>Ver Progresso</span>
-              </button>
-            </div>
-
-            {/* Stats Footer */}
             {progress && (
-              <div className="mt-12 rounded-xl border border-[var(--eco-line)] p-6 text-center" style={{ backgroundColor: 'var(--surface-card)' }}>
-                <p className="text-sm text-[var(--eco-muted)]">Seu compromisso</p>
-                <p className="mt-2 font-display text-3xl font-normal text-[var(--eco-text)]">
-                  {progress.currentStreak} 🔥
+              <div className="reino-nota" style={{ marginTop: 32 }}>
+                <p>
+                  {progress.currentStreak} {progress.currentStreak === 1 ? 'dia seguido' : 'dias seguidos'} de disciplina.
                 </p>
-                <p className="mt-1 text-sm text-[var(--eco-muted)]">dias seguidos de disciplina</p>
               </div>
             )}
           </>
         ) : (
-          /* History Tab Content */
-          <RingsHistory />
+          <div style={{ marginTop: 24 }}>
+            <RingsHistory />
+          </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
