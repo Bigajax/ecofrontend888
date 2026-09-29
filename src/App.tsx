@@ -18,6 +18,7 @@ import {
 
 import { lazyWithReload } from "@/utils/lazyWithReload";
 import "@/components/reino/reino-app.css";
+import ReinoCarregando from "@/components/reino/ReinoCarregando";
 import { replayPendingLeads } from "@/api/leadCapture";
 import { RootProviders } from "@/providers/RootProviders";
 import RequireAuth from "@/components/RequireAuth";
@@ -107,6 +108,10 @@ const AssinarPage = lazyWithReload(() => import("@/pages/AssinarPage"));
 // Lightweight loading fallback (no heavy dependencies)
 // Conceito "ECO": ondas que partem do símbolo no ritmo de uma respiração lenta.
 function LoadingFallback() {
+  // Dentro do app logado, o carregamento é o reino se desenhando; landing e funil seguem com o original.
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) {
+    return <ReinoCarregando />;
+  }
   return (
     <div className="eco-loader flex min-h-screen items-center justify-center bg-white px-6">
       <style>{`

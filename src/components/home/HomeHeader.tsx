@@ -4,32 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import FeedbackModal from '@/components/FeedbackModal';
 import { Astro } from '@/components/reino/ReinoScene';
 import { GlifoHoje, GlifoMapa } from '@/components/reino/ReinoGlifos';
-import { formatHojeLabel, getReinoMood } from '@/components/reino/reinoMood';
+import { getReinoMood } from '@/components/reino/reinoMood';
+import { lugarDaRota } from '@/components/reino/lugares';
 import '@/components/reino/reino.css';
 
 /**
  * Cabeçalho corrente, como em livro e atlas: diz em que lugar do reino você está.
  * A faixa tem a cor do céu da hora (creme de manhã, vinho à tarde, anil à noite).
  */
-function lugarDaRota(pathname: string): { codigo?: string; nome: string } {
-  const p = pathname.replace(/\/$/, '');
-  if (p === '/app' || p === '/app/home') return { nome: formatHojeLabel() };
-  if (p.startsWith('/app/mapa')) return { nome: '5 regiões · 1 caminho' };
-  if (p.startsWith('/app/meditacoes-sono')) return { codigo: 'SOM.02', nome: 'Vale do Sono' };
-  if (p.startsWith('/app/sons')) return { codigo: 'SOM.02', nome: 'Sons do vale' };
-  if (p.startsWith('/app/diario-estoico')) return { codigo: 'STO.05', nome: 'O Pórtico' };
-  if (p.startsWith('/app/dream')) return { codigo: 'DRM.03', nome: 'Lago dos Sonhos' };
-  if (p.startsWith('/app/articles')) return { nome: 'Biblioteca' };
-  if (p.startsWith('/app/meditation-player')) return { nome: 'Ouvindo agora' };
-  if (p.startsWith('/app/configuracoes')) return { nome: 'Sua conta' };
-  if (
-    ['/app/programas', '/app/rings', '/app/riqueza-mental', '/app/dr-joe-dispenza', '/app/introducao-meditacao', '/app/codigo-da-abundancia'].some(
-      (r) => p.startsWith(r),
-    )
-  )
-    return { codigo: 'TRI.04', nome: 'As Trilhas' };
-  return { nome: 'Ecotopia' };
-}
 
 const NAV = [
   { label: 'Hoje', to: '/app', end: true },

@@ -44,7 +44,7 @@ describe('RequireAuth', () => {
         <div>protegido</div>
       </RequireAuth>
     );
-    expect(screen.getByText('Validando sessão…')).toBeInTheDocument();
+    expect(screen.getByText('Abrindo o portão do reino')).toBeInTheDocument();
     expect(screen.queryByText('protegido')).not.toBeInTheDocument();
   });
 

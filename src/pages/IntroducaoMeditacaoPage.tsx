@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import HomeHeader from '@/components/home/HomeHeader';
 import ReinoChegada, { ReinoSessoes, type ReinoSessao } from '@/components/reino/ReinoChegada';
 import { useAuth } from '@/contexts/AuthContext';
-import MeditationPageSkeleton from '@/components/MeditationPageSkeleton';
+import ReinoCarregando from '@/components/reino/ReinoCarregando';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
 import MeditacaoExitModal from '@/components/MeditacaoExitModal';
@@ -314,7 +314,7 @@ export default function IntroducaoMeditacaoPage() {
       {user && <HomeHeader />}
 
       {isLoading ? (
-        <MeditationPageSkeleton />
+        <ReinoCarregando inline />
       ) : (
         <main className="page-with-nav">
           <ReinoChegada
