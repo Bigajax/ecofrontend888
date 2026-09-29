@@ -4546,3 +4546,23 @@
 .reino-sons .reino-player__canal-nome {
   color: #f4f1e8;
 }
+
+/* Linhas só de leitura na lista de sessões (Tudo o que você escreveu, dias do anel), set/2026 */
+.reino-sessao--leitura {
+  cursor: default;
+}
+.reino-sessao__resposta {
+  font-size: 16px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.reino-anel__citacao {
+  margin: 0 0 28px;
+  padding-left: 14px;
+  border-left: 3px solid var(--r-ocre);
+  font: 400 20px/1.4 var(--r-display);
+}
+.reino-pagina > .reino-filtros {
+  margin-bottom: 26px;
+}

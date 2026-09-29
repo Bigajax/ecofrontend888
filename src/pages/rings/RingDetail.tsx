@@ -2,7 +2,9 @@ import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { RINGS } from '@/constants/rings';
 import {
+  DIAS_POR_ANEL,
   ORDEM_DOS_ANEIS,
+  PERGUNTAS,
   diasConcluidos,
   diasDoAnel,
   estadoDoAnel,
@@ -11,16 +13,16 @@ import {
 } from '@/constants/ringsJornada';
 import { useRings } from '@/contexts/RingsContext';
 import { useAuth } from '@/contexts/AuthContext';
-import RingIcon from '@/components/rings/RingIcon';
-import SeloDoAnel from '@/components/rings/SeloDoAnel';
+import ReinoChegada from '@/components/reino/ReinoChegada';
 import HomeHeader from '@/components/home/HomeHeader';
 import '@/components/reino/reino.css';
 import type { RingType } from '@/types/rings';
 
 /**
- * Um anel da jornada (set/2026): o que ele pede, em que dias ele vem e, se já
- * foi atravessado, o Selo com as palavras da pessoa. Antes: texto fixo e um
- * "Por que importa" genérico, igual para os cinco.
+ * Um anel da jornada (set/2026), no molde das outras páginas do reino: a
+ * pintura na chegada e os seis dias do anel como lista, cada um com a pergunta
+ * daquele dia e, se já foi feito, a resposta da pessoa. O dia de hoje leva ao
+ * ritual. Antes: um ícone solto, texto fixo e o Selo à parte.
  */
 export default function RingDetail() {
   const { ringId } = useParams<{ ringId: string }>();
@@ -59,52 +61,95 @@ export default function RingDetail() {
   const anterior = ORDEM_DOS_ANEIS[i - 1];
   const proximo = ORDEM_DOS_ANEIS[i + 1];
 
+  const respostaDoDia = (dia: number) =>
+    allRituals
+      .filter((r) => r.status === 'completed')
+      .flatMap((r) => r.answers)
+      .find((a) => a.ringId === id && a.metadata?.dia === dia);
+
+  const legenda =
+    estado === 'feito'
+      ? 'Anel atravessado. Seis de seis dias.'
+      : estado === 'agora'
+        ? `Dia ${ponto.diaNoAnel} de 6 neste anel.`
+        : `Abre no dia ${de} do caminho.`;
+
   return (
     <div className="reino-corpo page-with-nav" style={{ minHeight: '100dvh' }}>
       <HomeHeader />
-      <div className="reino-pagina reino-anel">
-        <button type="button" className="reino-chegada__voltar" onClick={() => navigate('/app/rings')}>
-          <span aria-hidden="true">←</span> Os Cinco Anéis
-        </button>
+      <main>
+        <ReinoChegada
+          mood="amanhecer"
+          imagem="/images/reino/capa-cinco-aneis.webp"
+          foco="center 60%"
+          lugar={`Cinco Anéis · Dias ${de} a ${ate}`}
+          titulo={ring.titlePt}
+          sobre={ring.descriptionPt}
+          voltar={{ rotulo: 'Voltar aos Cinco Anéis', onClick: () => navigate('/app/rings') }}
+          progresso={{
+            valor: estado === 'feito' ? 1 : estado === 'agora' ? (ponto.diaNoAnel - 1) / DIAS_POR_ANEL : 0,
+            legenda,
+          }}
+        >
+          {estado === 'agora' && (
+            <button type="button" className="reino-placa" onClick={() => navigate('/app/rings/ritual')}>
+              Escrever o dia de hoje <span aria-hidden="true">→</span>
+            </button>
+          )}
+        </ReinoChegada>
 
-        <div className="reino-anel__topo">
-          <RingIcon ringId={id} size={64} />
-          <div>
-            <p className="reino-rotulo">
-              Dias {de} a {ate} ·{' '}
-              {estado === 'feito' ? 'atravessado' : estado === 'agora' ? `você está aqui, dia ${ponto.diaNoAnel} de 6` : 'ainda fechado'}
-            </p>
-            <h1 className="reino-corpo__titulo">{ring.titlePt}</h1>
-            <p className="reino-anel__sub">{ring.subtitlePt}</p>
-          </div>
+        <div className="reino-pagina">
+          <blockquote className="reino-anel__citacao">{ring.impactPhrase}</blockquote>
+
+          <p className="reino-rotulo">Os seis dias</p>
+          <ol className="reino-sumario reino-sessoes">
+            {PERGUNTAS[id].map((pergunta, k) => {
+              const dia = de + k;
+              const resposta = respostaDoDia(dia);
+              const hoje = estado === 'agora' && dia === ponto.dia && !resposta;
+              const conteudo = (
+                <>
+                  <span className="reino-sumario__n">{resposta ? '✓' : String(dia).padStart(2, '0')}</span>
+                  <span className="reino-sessao__texto">
+                    <span className="reino-sumario__t">{pergunta}</span>
+                    {resposta && <span className="reino-sessao__resposta">{resposta.answer}</span>}
+                    {resposta?.metadata?.fechamento && (
+                      <span className="reino-sessao__descricao">Passo de amanhã: {resposta.metadata.fechamento}</span>
+                    )}
+                  </span>
+                  <span className="reino-sumario__m">{resposta ? 'feito' : hoje ? 'hoje' : `dia ${dia}`}</span>
+                </>
+              );
+              return (
+                <li key={dia} className={resposta ? 'is-feita' : hoje ? 'is-proxima' : 'is-trancada'}>
+                  {hoje ? (
+                    <button type="button" className="reino-sessao" onClick={() => navigate('/app/rings/ritual')}>
+                      {conteudo}
+                    </button>
+                  ) : (
+                    <div className="reino-sessao reino-sessao--leitura">{conteudo}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+
+          <nav className="reino-anel__nav" aria-label="Outros anéis">
+            {anterior ? (
+              <button type="button" className="reino-ritual__link" onClick={() => navigate(`/app/rings/detail/${anterior}`)}>
+                ← {RINGS[anterior].titlePt}
+              </button>
+            ) : (
+              <span />
+            )}
+            {proximo && (
+              <button type="button" className="reino-ritual__link" onClick={() => navigate(`/app/rings/detail/${proximo}`)}>
+                {RINGS[proximo].titlePt} →
+              </button>
+            )}
+          </nav>
         </div>
-
-        <p className="reino-anel__texto">{ring.descriptionPt}</p>
-        <blockquote className="reino-ritual__abertura">
-          <p>{ring.impactPhrase}</p>
-        </blockquote>
-
-        {estado === 'fechado' ? (
-          <p className="reino-anel__texto">Este anel abre no dia {de} do caminho. As perguntas dele chegam uma por dia.</p>
-        ) : (
-          <SeloDoAnel anel={id} rituais={allRituals} />
-        )}
-
-        <nav className="reino-anel__nav" aria-label="Outros anéis">
-          {anterior ? (
-            <button type="button" className="reino-ritual__link" onClick={() => navigate(`/app/rings/detail/${anterior}`)}>
-              ← {RINGS[anterior].titlePt}
-            </button>
-          ) : (
-            <span />
-          )}
-          {proximo && (
-            <button type="button" className="reino-ritual__link" onClick={() => navigate(`/app/rings/detail/${proximo}`)}>
-              {RINGS[proximo].titlePt} →
-            </button>
-          )}
-        </nav>
-      </div>
+      </main>
     </div>
   );
 }

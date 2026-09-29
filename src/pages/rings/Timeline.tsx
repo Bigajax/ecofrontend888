@@ -1,107 +1,121 @@
-import { parseLocalDate } from '@/utils/dataLocal';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRings } from '@/contexts/RingsContext';
 import { RINGS } from '@/constants/rings';
-import TimelineDay from '@/components/rings/TimelineDay';
+import { ORDEM_DOS_ANEIS } from '@/constants/ringsJornada';
+import { getTodayDate, parseLocalDate, diasEntre } from '@/utils/dataLocal';
+import HomeHeader from '@/components/home/HomeHeader';
+import ReinoChegada from '@/components/reino/ReinoChegada';
+import '@/components/reino/reino.css';
+import type { RingType } from '@/types/rings';
 
-type DateRange = '7' | '30' | 'all';
+type Filtro = 'todos' | RingType;
 
+const NOME_CURTO: Record<RingType, string> = {
+  earth: 'Terra',
+  water: 'Água',
+  fire: 'Fogo',
+  wind: 'Vento',
+  void: 'Vazio',
+};
+
+function quando(data: string): string {
+  const dias = diasEntre(getTodayDate(), data);
+  if (dias === 0) return 'hoje';
+  if (dias === 1) return 'ontem';
+  return parseLocalDate(data).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+}
+
+/**
+ * Tudo o que a pessoa escreveu nos Cinco Anéis (set/2026), no molde das outras
+ * páginas do reino: a pintura na chegada e a lista de dias, do mais recente
+ * para o mais antigo. Cada linha traz o dia da jornada, a pergunta que valia
+ * naquele dia, a resposta e o passo de amanhã. Antes: cartões de vidro com
+ * "Foco: n/a" e a pergunta genérica do anel no lugar da do dia.
+ */
 export default function Timeline() {
   const navigate = useNavigate();
   const { allRituals } = useRings();
-  const [dateRange, setDateRange] = useState<DateRange>('7');
+  const [filtro, setFiltro] = useState<Filtro>('todos');
 
-  const filteredRituals = useMemo(() => {
-    let filtered = [...allRituals].sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
-
-    if (dateRange === '7') {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      filtered = filtered.filter((r) => parseLocalDate(r.date) >= sevenDaysAgo);
-    } else if (dateRange === '30') {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      filtered = filtered.filter((r) => parseLocalDate(r.date) >= thirtyDaysAgo);
-    }
-
-    return filtered;
-  }, [allRituals, dateRange]);
-
-  const getFormatDatePt = (dateStr: string): string => {
-    const date = parseLocalDate(dateStr);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (dateStr === today.toISOString().split('T')[0]) {
-      return 'Hoje';
-    } else if (dateStr === yesterday.toISOString().split('T')[0]) {
-      return 'Ontem';
-    } else {
-      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-    }
-  };
+  const linhas = useMemo(
+    () =>
+      allRituals
+        .filter((r) => r.status === 'completed')
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .flatMap((r) =>
+          r.answers
+            .filter((a) => a.answer?.trim() && (filtro === 'todos' || a.ringId === filtro))
+            .map((a) => ({ data: r.date, resposta: a, chave: `${r.id}-${a.ringId}` }))
+        ),
+    [allRituals, filtro]
+  );
 
   return (
-    <div className="min-h-screen bg-[var(--eco-bg)] font-primary">
-      <div className="mx-auto max-w-3xl px-4 py-8 md:px-8 md:py-12">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-3xl font-normal text-[var(--eco-text)]">Linha do Tempo</h1>
-            <p className="mt-2 text-[var(--eco-muted)]">Releia suas reflexões e veja padrões</p>
-          </div>
-          <button
-            onClick={() => navigate('/app/rings')}
-            className="rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md px-4 py-2 text-sm font-medium text-[var(--eco-text)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
-          >
-            ← Voltar
-          </button>
-        </div>
+    <div className="reino-corpo page-with-nav" style={{ minHeight: '100dvh' }}>
+      <HomeHeader />
+      <main>
+        <ReinoChegada
+          mood="amanhecer"
+          imagem="/images/reino/capa-cinco-aneis.webp"
+          foco="center 60%"
+          lugar="As Trilhas · Cinco Anéis"
+          titulo="Tudo o que você escreveu"
+          sobre="Cada dia do caminho, com a pergunta daquele dia e a sua resposta."
+          voltar={{ rotulo: 'Voltar aos Cinco Anéis', onClick: () => navigate('/app/rings') }}
+        />
 
-        {/* Date filter */}
-        <div className="mb-8 flex gap-2">
-          {(['7', '30', 'all'] as const).map((range) => (
-            <button
-              key={range}
-              onClick={() => setDateRange(range)}
-              className={`rounded-lg px-4 py-2 font-medium transition-all duration-300 ${
-                dateRange === range
-                  ? 'bg-[var(--eco-user)] text-white shadow-[0_4px_20px_rgba(167,132,108,0.25)]'
-                  : 'border border-[var(--eco-line)] bg-white/60 backdrop-blur-md text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]'
-              }`}
-            >
-              {range === '7' ? 'Últimos 7 dias' : range === '30' ? 'Últimos 30 dias' : 'Tudo'}
-            </button>
-          ))}
-        </div>
-
-        {/* Timeline */}
-        <div className="space-y-4">
-          {filteredRituals.length > 0 ? (
-            filteredRituals.map((ritual) => (
-              <TimelineDay
-                key={ritual.id}
-                ritual={ritual}
-                dateFormatted={getFormatDatePt(ritual.date)}
-                rings={RINGS}
-              />
-            ))
-          ) : (
-            <div className="rounded-xl border border-[var(--eco-line)] bg-white/50 p-8 text-center">
-              <p className="text-[var(--eco-muted)]">Nenhum ritual encontrado neste período</p>
+        <div className="reino-pagina">
+          <div className="reino-filtros" role="group" aria-label="Filtrar por anel">
+            {(['todos', ...ORDEM_DOS_ANEIS] as Filtro[]).map((f) => (
               <button
-                onClick={() => navigate('/app/rings/ritual')}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[var(--eco-user)] px-6 py-2 font-medium text-white transition-all hover:scale-105"
+                key={f}
+                type="button"
+                className="reino-filtro"
+                aria-pressed={filtro === f}
+                onClick={() => setFiltro(f)}
               >
-                <span>Começar seu primeiro ritual</span>
-                <span>→</span>
+                {f === 'todos' ? 'Todos' : NOME_CURTO[f]}
+              </button>
+            ))}
+          </div>
+
+          {linhas.length === 0 ? (
+            <div className="reino-nota">
+              <p>{filtro === 'todos' ? 'Nada escrito ainda. O primeiro dia leva poucos minutos.' : 'Nada escrito neste anel ainda.'}</p>
+              <button type="button" className="reino-placa" onClick={() => navigate('/app/rings/ritual')}>
+                Escrever o dia de hoje <span aria-hidden="true">→</span>
               </button>
             </div>
+          ) : (
+            <>
+              <p className="reino-rotulo">Os dias escritos</p>
+              <ol className="reino-sumario reino-sessoes">
+                {linhas.map(({ data, resposta: a, chave }) => {
+                  const dia = typeof a.metadata?.dia === 'number' ? (a.metadata.dia as number) : null;
+                  return (
+                    <li key={chave}>
+                      <div className="reino-sessao reino-sessao--leitura">
+                        <span className="reino-sumario__n">{dia ? String(dia).padStart(2, '0') : ''}</span>
+                        <span className="reino-sessao__texto">
+                          <span className="reino-sumario__t">{a.metadata?.pergunta || RINGS[a.ringId]?.question}</span>
+                          <span className="reino-sessao__resposta">{a.answer}</span>
+                          {a.metadata?.fechamento && (
+                            <span className="reino-sessao__descricao">Passo de amanhã: {a.metadata.fechamento}</span>
+                          )}
+                        </span>
+                        <span className="reino-sumario__m">
+                          {quando(data)} · {NOME_CURTO[a.ringId]}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
