@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { abrirPorta } from '@/utils/porta';
-import { useCasaDaMemoria } from './MemoryLayout';
-import { nomeDoTema, type Memoria } from '@/api/emocional';
+import { useCasaDaMemoria } from './casaDaMemoria';
+import { climaDe, nomeDoTema, type Memoria } from '@/api/emocional';
 
 /**
- * Memórias: o que a Eco guardou, mês a mês, da mais recente para a mais
- * antiga. Filtra por tema. Sem memória ainda, explica o que vira memória.
+ * Memórias, "o que ficou": cada uma é um bilhete que a Eco escreveu depois de
+ * uma conversa que pesou. Mês a mês, da mais recente para a mais antiga, com
+ * um ponto de tinta na cor do tempo daquela emoção (claro, noite, entardecer).
  */
 
 const tema = (m: Memoria) => {
@@ -25,7 +26,7 @@ const mes = (iso: string) => {
   const t = new Date(iso).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
-const dia = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+const dia = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
 
 export default function MemoriesSection() {
   const navigate = useNavigate();
@@ -56,10 +57,10 @@ export default function MemoriesSection() {
   if (memorias.length === 0) {
     return (
       <section className="reino-casa__vazio">
-        <h2 className="reino-corpo__titulo">Ainda não há memórias.</h2>
+        <p className="reino-casa__vazio-titulo">O caderno ainda está em branco.</p>
         <p>
-          Uma conversa vira memória quando pesa: quando você conta algo que mexe forte com você. A Eco guarda o
-          essencial, a emoção, o tema e um resumo. Só você vê.
+          Uma conversa vira memória quando pesa: quando você conta algo que mexe forte com você. A Eco anota o
+          essencial, a emoção, o tema e poucas linhas do que aconteceu.
         </p>
         <button type="button" className="reino-placa" onClick={() => navigate('/app/chat')}>
           Conversar com a Eco <span aria-hidden="true">→</span>
@@ -73,7 +74,7 @@ export default function MemoriesSection() {
   return (
     <section aria-label="Memórias">
       {temas.length > 1 && (
-        <div className="reino-filtros" role="group" aria-label="Filtrar por tema">
+        <div className="reino-filtros reino-casa__filtros" role="group" aria-label="Filtrar por tema">
           <button type="button" className="reino-filtro" aria-pressed={!filtro} onClick={() => setFiltro(null)}>
             Todas
           </button>
@@ -93,22 +94,17 @@ export default function MemoriesSection() {
 
       {grupos.map(([nome, lista]) => (
         <div key={nome} className="reino-casa__mes">
-          <p className="reino-rotulo">{nome}</p>
-          <ol className="reino-sumario reino-sessoes">
+          <h2 className="reino-casa__mes-nome">{nome}</h2>
+          <ol className="reino-bilhetes">
             {lista.map((m) => (
-              <li key={m.id}>
-                <div className="reino-sessao reino-sessao--leitura">
-                  <span className="reino-sumario__n">{dia(m.created_at!)}</span>
-                  <span className="reino-sessao__texto">
-                    <span className="reino-casa__resumo">{resumo(m)}</span>
-                    <span className="reino-sessao__descricao">
-                      {[m.emocao_principal, tema(m)].filter(Boolean).join(' · ')}
-                    </span>
-                  </span>
-                  <span className="reino-sumario__m">
-                    {typeof m.intensidade === 'number' ? `${m.intensidade}/10` : ''}
-                  </span>
-                </div>
+              <li key={m.id} className={`reino-bilhete is-${climaDe(m.emocao_principal)}`}>
+                <p className="reino-bilhete__quando">
+                  <span className="reino-bilhete__tinta" aria-hidden="true" />
+                  {dia(m.created_at!)}
+                  {m.emocao_principal ? ` · ${m.emocao_principal.toLowerCase()}` : ''}
+                </p>
+                <p className="reino-bilhete__texto">{resumo(m)}</p>
+                {tema(m) && <p className="reino-bilhete__tema">{tema(m)}</p>}
               </li>
             ))}
           </ol>
@@ -116,15 +112,13 @@ export default function MemoriesSection() {
       ))}
 
       {janela && (
-        <div className="reino-nota reino-casa__janela">
-          <p>
-            Você vê os últimos {janela.dias} dias
-            {escondidas > 0 ? `. Há mais ${escondidas} ${escondidas === 1 ? 'memória guardada' : 'memórias guardadas'}.` : '.'}{' '}
-            <button type="button" className="reino-aviso__acao" onClick={() => abrirPorta('memory_historico')}>
-              Ver tudo com a assinatura
-            </button>
-          </p>
-        </div>
+        <p className="reino-casa__janela">
+          Você vê os últimos {janela.dias} dias
+          {escondidas > 0 ? `. Há mais ${escondidas} ${escondidas === 1 ? 'bilhete guardado' : 'bilhetes guardados'}.` : '.'}{' '}
+          <button type="button" className="reino-aviso__acao" onClick={() => abrirPorta('memory_historico')}>
+            Ver o caderno inteiro
+          </button>
+        </p>
       )}
     </section>
   );

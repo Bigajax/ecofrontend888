@@ -109,3 +109,33 @@ export function nomeDoTema(chave: string): string {
   const t = chave.replace(/_/g, ' ').trim();
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
+
+/** Mesmo critério do servidor (relatorioEmocionalUtils): emoções leves e pesadas. */
+const LEVES = new Set(['alegria', 'calma', 'esperanca', 'alivio', 'amor', 'gratidao', 'compaixao', 'surpresa']);
+const PESADAS = new Set([
+  'tristeza',
+  'raiva',
+  'medo',
+  'nojo',
+  'ansiedade',
+  'frustracao',
+  'desespero',
+  'vergonha',
+  'culpa',
+  'rejeicao',
+  'solidao',
+  'vazio',
+  'dor',
+  'ciumes',
+]);
+
+export function climaDe(emocao: string | null | undefined): Clima {
+  const k = (emocao ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim()
+    .toLowerCase();
+  if (LEVES.has(k)) return 'leve';
+  if (PESADAS.has(k)) return 'pesado';
+  return 'misto';
+}

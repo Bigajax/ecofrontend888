@@ -75,14 +75,16 @@ export function GlifoMapa({ ativo, className }: GlifoProps) {
   );
 }
 
-/** Eco: a Casa da Eco, com a janela acesa. */
+/**
+ * A Eco: a bolha de conversa com o olho quente (a marca da Eco). Antes era a
+ * casa, e parecia que a pessoa conversava com a casa; a casa é o lugar, nas
+ * pinturas e no cabeçalho, e quem conversa é a Eco.
+ */
 export function GlifoEco({ ativo, className }: GlifoProps) {
   return (
     <Base className={className}>
-      <path d="M4.4 13.6 14.1 5.4l9.5 8.2" />
-      <path d="M7.1 12.1v10.5h14V12" />
-      <path d="M10.1 22.6v-5h2.8v5" />
-      <rect x={15.2} y={14.4} width={3.6} height={3.4} rx={0.4} fill={acento(ativo)} stroke={ativo ? OCRE : 'currentColor'} />
+      <path d="M4.8 12.8c-.1-4.4 4-7.6 9.2-7.5 5.1.1 9.1 3.4 9 7.7-.1 4.2-4.2 7.3-9.3 7.2-1.2 0-2.3-.2-3.3-.5l-4.3 2.6 1.4-3.9c-1.7-1.4-2.7-3.4-2.7-5.6Z" />
+      <circle cx={14} cy={12.6} r={2.3} fill={acento(ativo)} stroke={ativo ? OCRE : 'currentColor'} strokeWidth={1.3} />
     </Base>
   );
 }
