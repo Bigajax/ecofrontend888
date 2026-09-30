@@ -5211,3 +5211,91 @@
   text-underline-offset: 4px;
   cursor: pointer;
 }
+
+/* ── Quando algo quebra: a trilha interrompida (set/2026) ── */
+.reino-erro {
+  gap: 10px;
+  padding: 32px 20px;
+  text-align: center;
+}
+.reino-erro .reino-carregando__raios path {
+  animation: none;
+  stroke-dashoffset: 0;
+}
+.reino-erro__horizonte {
+  width: 200px;
+  height: 14px;
+}
+.reino-erro__horizonte path {
+  fill: none;
+  stroke: var(--c-linha);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.reino-erro__horizonte .reino-erro__lascas {
+  stroke-width: 1.6;
+  opacity: 0.7;
+}
+.reino-erro__titulo {
+  max-width: 22rem;
+  margin: 14px 0 0;
+  font: 400 clamp(26px, 5vw, 32px)/1.15 'Young Serif', Georgia, serif;
+  color: var(--c-fg);
+}
+.reino-erro__texto {
+  max-width: 24rem;
+  margin: 0;
+  font: 400 15.5px/1.55 'Figtree', system-ui, sans-serif;
+  color: var(--c-fg2);
+}
+.reino-erro__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px 22px;
+  margin: 18px 0 6px;
+}
+.reino-erro__placa {
+  min-height: 46px;
+  padding: 12px 22px;
+  border: 0;
+  border-radius: 3px 8px 4px 9px;
+  background: #edb85a;
+  color: #1c2350;
+  font: 600 13px 'Figtree', system-ui, sans-serif;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.reino-erro__link {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--c-fg);
+  font: 500 14px 'Figtree', system-ui, sans-serif;
+  text-decoration: underline;
+  text-decoration-color: #edb85a;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.reino-erro__placa:focus-visible,
+.reino-erro__link:focus-visible {
+  outline: 2px solid #edb85a;
+  outline-offset: 3px;
+}
+.reino-erro__zero {
+  display: grid;
+  gap: 4px;
+  max-width: 24rem;
+  margin: 8px 0 12px;
+}
+.reino-erro__zero span {
+  font: 400 12.5px/1.5 'Figtree', system-ui, sans-serif;
+  color: var(--c-fg2);
+}
+.reino-erro.is-inline {
+  --c-fg: #1c2350;
+  --c-fg2: #4b5070;
+  --c-linha: #c98e86;
+}
