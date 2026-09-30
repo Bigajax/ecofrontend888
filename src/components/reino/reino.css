@@ -5299,3 +5299,46 @@
   --c-fg2: #4b5070;
   --c-linha: #c98e86;
 }
+
+/* Chat: as ações da mensagem em palavras (set/2026) */
+.reino-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 14px;
+  margin-top: 6px;
+  font: 400 12.5px 'Figtree', system-ui, sans-serif;
+}
+.reino-acoes__voto {
+  display: inline-flex;
+  gap: 14px;
+}
+.reino-acoes__btn {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: #5b6080;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  transition: color 0.2s, text-decoration-color 0.2s;
+}
+.reino-acoes__btn:hover {
+  color: #1c2350;
+  text-decoration-color: rgba(237, 184, 90, 0.8);
+}
+.reino-acoes__btn.is-marcado {
+  color: #1c2350;
+  text-decoration-color: #edb85a;
+}
+.reino-acoes__btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.reino-acoes__btn:focus-visible {
+  outline: 2px solid #edb85a;
+  outline-offset: 2px;
+}

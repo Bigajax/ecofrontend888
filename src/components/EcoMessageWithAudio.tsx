@@ -1,6 +1,5 @@
 // src/components/EcoMessageWithAudio.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ClipboardCopy, RefreshCcw, Share, ThumbsDown, ThumbsUp, Volume2, Loader2 } from "lucide-react";
 
 import AudioPlayerOverlay from "./AudioPlayerOverlay";
 import ChatMessage from "./ChatMessage";
@@ -40,35 +39,15 @@ type EcoMessageWithAudioProps = {
   showRecommendedAction?: boolean;
 };
 
-const BTN_SIZE = "w-7 h-7 sm:w-8 sm:h-8";
-const ICON_SIZE = "w-[14px] h-[14px] sm:w-4 sm:h-4";
-const ICON_BASE =
-  "text-[#5B6080] transition-colors group-hover:text-[#1C2350]";
-
-const GhostBtn = React.forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & { children: React.ReactNode }
->(({ children, className = "", type = "button", ...rest }, ref) => (
-  <button
-    {...rest}
-    ref={ref}
-    className={[
-      "group rounded-md",
-      BTN_SIZE,
-      "flex items-center justify-center",
-      "hover:bg-[#1C2350]/[0.06] active:bg-[#1C2350]/10",
-      "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EDB85A]/70",
-      "transition-colors",
-      className,
-    ]
-      .filter(Boolean)
-      .join(" ")}
-    type={type}
-  >
-    {children}
-  </button>
-));
-GhostBtn.displayName = "GhostBtn";
+/** Ação em palavra, discreta, com o sublinhado ocre do reino. */
+const AcaoBtn = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+  ({ children, className = "", type = "button", ...rest }, ref) => (
+    <button {...rest} ref={ref} type={type} className={["reino-acoes__btn", className].filter(Boolean).join(" ")}>
+      {children}
+    </button>
+  )
+);
+AcaoBtn.displayName = "AcaoBtn";
 
 // Coordenação global: só um player de voz aberto por vez. Abrir um novo fecha o anterior
 // (cada mensagem tem seu próprio overlay; isto evita players empilhados tocando juntos).
@@ -158,7 +137,6 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
   const hasInteractionId =
     typeof messageInteractionId === "string" && messageInteractionId.length > 0;
 
-  const ICON_CLASS = `${ICON_SIZE} ${ICON_BASE}`;
   const canDisplayFeedback = !isUser;
   const canShare = !isUser && hasVisibleText && !isStreaming;
   const canRetry = !isUser && hasVisibleText && !isStreaming && typeof onRetry === "function";
@@ -721,109 +699,72 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
         <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} w-full min-w-0 max-w-full`}>
           <ChatMessage message={message} isEcoTyping={isEcoTyping} isEcoActive={isEcoTyping} onRetry={onRetry} />
 
+          {/* Ações em palavras, no tom da Eco (set/2026). Antes: fileira de ícones
+              genéricos (recarregar, prancheta, polegares, alto-falante). */}
           <div
-            className={[
-              "mt-1 flex items-center gap-1.5",
-              "max-w-[min(720px,88vw)] min-w-0",
-              actionsPad,
-              isUser ? "self-end" : "",
-            ]
+            className={["reino-acoes", "max-w-[min(720px,88vw)] min-w-0", actionsPad, isUser ? "self-end" : ""]
               .filter(Boolean)
               .join(" ")}
           >
-            {canRetry && (
-              <GhostBtn onClick={onRetry} aria-label="Gerar outra resposta" title="Tentar de novo">
-                <RefreshCcw className={ICON_CLASS} strokeWidth={1.5} />
-              </GhostBtn>
+            {canSpeak && (
+              <AcaoBtn
+                onClick={reproduzirAudio}
+                disabled={loadingAudio}
+                aria-label={loadingAudio ? "Preparando a voz" : "Ouvir em voz alta"}
+              >
+                {loadingAudio ? "preparando a voz..." : "ouvir"}
+              </AcaoBtn>
             )}
 
-            <GhostBtn onClick={copiarTexto} aria-label="Copiar mensagem" title="Copiar">
-              <ClipboardCopy className={ICON_CLASS} strokeWidth={1.5} />
-            </GhostBtn>
+            <AcaoBtn onClick={copiarTexto} aria-label="Copiar mensagem">
+              {copied ? "copiado" : "copiar"}
+            </AcaoBtn>
 
             {canShare && (
-              <GhostBtn onClick={compartilharTexto} aria-label="Compartilhar resposta" title="Compartilhar">
-                <Share className={ICON_CLASS} strokeWidth={1.5} />
-              </GhostBtn>
+              <AcaoBtn onClick={compartilharTexto} aria-label="Enviar para alguém">
+                enviar para alguém
+              </AcaoBtn>
+            )}
+
+            {canRetry && (
+              <AcaoBtn onClick={onRetry} aria-label="Pedir outra resposta">
+                pedir outra
+              </AcaoBtn>
             )}
 
             {canDisplayFeedback && (
-              <>
-                <GhostBtn
+              <span className="reino-acoes__voto">
+                <AcaoBtn
                   onClick={handleLike}
-                  aria-label="Curtir resposta"
-                  title="Curtir"
                   disabled={feedbackButtonsDisabled}
-                  className={optimisticVote === "up" ? "bg-[#1C2350]/[0.08]" : undefined}
                   aria-pressed={optimisticVote === "up"}
                   aria-busy={sendingFeedback && pendingVote === "up"}
+                  className={optimisticVote === "up" ? "is-marcado" : undefined}
                 >
-                  {sendingFeedback && pendingVote === "up" ? (
-                    <Loader2 className={`${ICON_SIZE} text-emerald-600 animate-spin`} strokeWidth={1.75} />
-                  ) : (
-                    <ThumbsUp
-                      className={optimisticVote === "up" ? `${ICON_SIZE} text-[#4E6B4A]` : ICON_CLASS}
-                      strokeWidth={1.5}
-                    />
-                  )}
-                </GhostBtn>
-
-                <div className="relative">
-                  <GhostBtn
+                  {optimisticVote === "up" ? "isso ajudou, obrigada" : "isso ajudou"}
+                </AcaoBtn>
+                <span className="relative">
+                  <AcaoBtn
                     ref={downBtnRef}
                     onClick={handleThumbDownClick}
-                    aria-label="Não curtir resposta"
-                    title="Não curtir"
                     disabled={feedbackButtonsDisabled}
-                    className={optimisticVote === "down" || showReasons ? "bg-[#1C2350]/[0.08]" : undefined}
                     aria-pressed={optimisticVote === "down"}
                     aria-busy={sendingFeedback && pendingVote === "down"}
+                    className={optimisticVote === "down" || showReasons ? "is-marcado" : undefined}
                   >
-                    {sendingFeedback && pendingVote === "down" ? (
-                      <Loader2 className={`${ICON_SIZE} text-red-500 animate-spin`} strokeWidth={1.75} />
-                    ) : (
-                      <ThumbsDown
-                        className={optimisticVote === "down" || showReasons ? `${ICON_SIZE} text-[#9B3B2F]` : ICON_CLASS}
-                        strokeWidth={1.5}
-                      />
-                    )}
-                  </GhostBtn>
-                </div>
-                <FeedbackReasonPopover
-                  open={showReasons && hasInteractionId && !isStreaming}
-                  selectedReason={selectedReason}
-                  status={reasonPopoverStatus}
-                  onSelect={handleSelectReason}
-                  onConfirm={handleConfirmDown}
-                  onClose={handleCloseReasons}
-                />
-              </>
+                    não era isso
+                  </AcaoBtn>
+                  <FeedbackReasonPopover
+                    open={showReasons && hasInteractionId && !isStreaming}
+                    selectedReason={selectedReason}
+                    status={reasonPopoverStatus}
+                    onSelect={handleSelectReason}
+                    onConfirm={handleConfirmDown}
+                    onClose={handleCloseReasons}
+                  />
+                </span>
+              </span>
             )}
-
-            {canSpeak && (
-              <GhostBtn
-                onClick={reproduzirAudio}
-                aria-label={loadingAudio ? "Gerando áudio..." : "Ouvir em áudio"}
-                title="Ouvir"
-                disabled={loadingAudio}
-                className="disabled:opacity-50 disabled:pointer-events-none"
-              >
-                {loadingAudio ? (
-                  <Loader2 className={`${ICON_CLASS} animate-spin`} strokeWidth={1.75} />
-                ) : (
-                  <Volume2 className={ICON_CLASS} strokeWidth={1.5} />
-                )}
-              </GhostBtn>
-            )}
-
-            <span
-              className={`ml-1 font-mono text-[11px] text-[#5B6080] transition-opacity ${
-                copied ? "opacity-100" : "opacity-0"
-              }`}
-              aria-live="polite"
-            >
-              copiado
-            </span>
           </div>
 
           {feedbackError && (
