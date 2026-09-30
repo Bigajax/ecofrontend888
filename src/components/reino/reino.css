@@ -2381,14 +2381,44 @@
 /* ===================== Casa da Eco: lateral, barra de cima e gaveta ===================== */
 .reino-casa-lateral {
   flex-direction: column;
-  width: 96px;
+  width: 112px;
   flex-shrink: 0;
-  background: var(--r-linho);
+  background: #e2ddd0;
   border-right: 1px dashed var(--r-trilho);
-  padding: 18px 8px 14px;
+  padding: 16px 8px 12px;
+}
+/* a casa no topo da planta */
+.reino-casa-lateral__casa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.reino-casa-lateral__casa img {
+  width: 76px;
+  height: 52px;
+  object-fit: cover;
+  object-position: 30% 55%;
+}
+.reino-casa-lateral__comodo {
+  font: 400 10.5px/1.2 var(--r-mono);
+  color: #7a7d96;
+  text-align: center;
+}
+.reino-casa-lateral__nav .reino-casa-lateral__item {
+  border-radius: 3px 8px 4px 9px;
+}
+/* o cômodo onde você está: a janela acesa */
+.reino-casa-lateral__nav .reino-casa-lateral__item.is-ativo {
+  background: var(--r-papel);
+  box-shadow: 0 3px 0 -1px rgba(28, 35, 80, 0.14), inset 0 -3px 0 #edb85a;
+}
+.reino-casa-lateral__nav .reino-casa-lateral__item.is-ativo .reino-casa-lateral__comodo {
+  color: #1c2350;
 }
 .reino-casa-lateral__codigo {
-  margin: 0 0 14px;
+  margin: 0;
   text-align: center;
   font: 400 10.5px var(--r-mono);
   letter-spacing: 0.08em;
@@ -5341,4 +5371,125 @@
 .reino-acoes__btn:focus-visible {
   outline: 2px solid #edb85a;
   outline-offset: 2px;
+}
+
+/* ── A varanda da Casa: a chegada da conversa (set/2026) ── */
+.reino-varanda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: clamp(10px, 3vh, 44px) 0 4px;
+  text-align: center;
+}
+.reino-varanda__casa {
+  width: min(300px, 80vw);
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: 30% 55%;
+}
+.reino-varanda__titulo {
+  margin: 10px 0 0;
+  font: 400 clamp(28px, 4.4vw, 38px)/1.15 'Young Serif', Georgia, serif;
+  color: #1c2350;
+}
+.reino-varanda__eco {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 30rem;
+  margin: 0;
+  text-align: left;
+  font: 400 17px/1.55 'Figtree', system-ui, sans-serif;
+  color: #3b4166;
+}
+.reino-varanda__glifo {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
+  color: #1c2350;
+}
+.reino-varanda__portas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 34rem;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+/* cada jeito de começar é uma porta: arco em cima, papel, borda em tinta */
+.reino-porta-entrada {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 100%;
+  min-height: 104px;
+  padding: 16px 12px 12px;
+  border: 1.5px solid rgba(28, 35, 80, 0.35);
+  border-radius: 50% 50% 6px 6px / 54px 54px 6px 6px;
+  background: #fbf9f3;
+  color: #1c2350;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.reino-porta-entrada:hover {
+  border-color: #1c2350;
+  box-shadow: 0 3px 0 -1px #edb85a;
+}
+.reino-porta-entrada:focus-visible {
+  outline: 2px solid #edb85a;
+  outline-offset: 3px;
+}
+.reino-porta-entrada:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.reino-porta-entrada__rotulo {
+  font: 400 16px/1.25 'Young Serif', Georgia, serif;
+}
+.reino-porta-entrada__sub {
+  font: 400 12.5px/1.35 'Figtree', system-ui, sans-serif;
+  color: #5b6080;
+}
+@media (max-width: 560px) {
+  .reino-varanda__portas {
+    grid-template-columns: 1fr;
+  }
+  .reino-porta-entrada {
+    min-height: 0;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    border-radius: 6px 22px 6px 6px;
+    text-align: left;
+  }
+}
+
+/* a folha de escrever: endereçada, com o enviar em palavra */
+.reino-folha-escrever__para {
+  font: 400 11.5px 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: 0.06em;
+  color: #5b6080;
+}
+.reino-folha-escrever__botao.is-enviar,
+.reino-folha-escrever__botao.is-escrevendo {
+  width: auto;
+  padding: 0 16px;
+  font: 600 12.5px 'Figtree', system-ui, sans-serif;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.reino-folha-escrever__botao.is-escrevendo {
+  border-color: transparent;
+  color: #5b6080;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.reino-casa-lateral__nav .reino-casa-lateral__item.is-ativo .reino-casa-lateral__rotulo {
+  text-decoration: none;
 }

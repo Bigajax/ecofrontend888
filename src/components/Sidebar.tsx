@@ -26,11 +26,11 @@ type Glifo = ComponentType<{ ativo: boolean; className?: string }>;
  * Os cômodos da Casa da Eco: a conversa e o que a Eco guarda de você.
  * Glifos a pincel no lugar dos ícones de linha; a aba ativa acende em ocre.
  */
-const navItems: { id: string; label: string; curto: string; glifo: Glifo; path: string }[] = [
-  { id: 'chat', label: 'Conversa', curto: 'Conversa', glifo: GlifoEco, path: '/app/chat' },
-  { id: 'memories', label: 'Memórias', curto: 'Memórias', glifo: GlifoMemorias, path: '/app/memory' },
-  { id: 'profile', label: 'Perfil emocional', curto: 'Perfil', glifo: GlifoEspelho, path: '/app/memory/profile' },
-  { id: 'reports', label: 'Relatórios', curto: 'Relatórios', glifo: GlifoRelatorio, path: '/app/memory/report' },
+const navItems: { id: string; label: string; curto: string; comodo: string; glifo: Glifo; path: string }[] = [
+  { id: 'chat', label: 'Conversa', curto: 'Conversa', comodo: 'a sala', glifo: GlifoEco, path: '/app/chat' },
+  { id: 'memories', label: 'Memórias', curto: 'Memórias', comodo: 'o caderno', glifo: GlifoMemorias, path: '/app/memory' },
+  { id: 'profile', label: 'Perfil emocional', curto: 'Perfil', comodo: 'o espelho', glifo: GlifoEspelho, path: '/app/memory/profile' },
+  { id: 'reports', label: 'Relatórios', curto: 'Relatórios', comodo: 'o céu', glifo: GlifoRelatorio, path: '/app/memory/report' },
 ];
 
 
@@ -101,11 +101,11 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
           <div className="reino-casa-lateral__pe">
             <button type="button" onClick={handleFeedback} className="reino-casa-lateral__item is-linha">
               <GlifoPena ativo={false} className="reino-casa-lateral__glifo" />
-              <span className="reino-casa-lateral__rotulo">Feedback</span>
+              <span className="reino-casa-lateral__rotulo">Recado</span>
             </button>
             <button type="button" onClick={handleBackToHome} className="reino-casa-lateral__item is-linha">
               <GlifoPorta ativo={false} className="reino-casa-lateral__glifo" />
-              <span className="reino-casa-lateral__rotulo">Sair</span>
+              <span className="reino-casa-lateral__rotulo">Sair da casa</span>
             </button>
           </div>
         </aside>
@@ -137,7 +137,7 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
           })}
           <button type="button" onClick={() => onLogout?.()} className="reino-casa-lateral__item">
             <GlifoPorta ativo={false} className="reino-casa-lateral__glifo" />
-            <span className="reino-casa-lateral__rotulo">Sair</span>
+            <span className="reino-casa-lateral__rotulo">Sair da casa</span>
           </button>
         </div>
       </nav>
@@ -148,7 +148,10 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
   return (
     <>
     <aside className="reino-corpo reino-casa-lateral hidden lg:flex" aria-label="Casa da Eco">
-      <p className="reino-casa-lateral__codigo">ECO.01</p>
+      <div className="reino-casa-lateral__casa">
+        <img src="/images/reino/casa-800.webp" alt="" decoding="async" className="reino-rasgo-a" />
+        <p className="reino-casa-lateral__codigo">ECO.01</p>
+      </div>
       <nav className="reino-casa-lateral__nav">
         {navItems.map((item) => {
           const Glifo = item.glifo;
@@ -160,23 +163,25 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
               onClick={() => handleNavigate(item.path)}
               aria-current={ativo ? 'page' : undefined}
               className={clsx('reino-casa-lateral__item', ativo && 'is-ativo')}
-              title={item.label}
             >
               <Glifo ativo={ativo} className="reino-casa-lateral__glifo" />
               <span className="reino-casa-lateral__rotulo">{item.label}</span>
+              <span className="reino-casa-lateral__comodo">{item.comodo}</span>
             </button>
           );
         })}
       </nav>
 
       <div className="reino-casa-lateral__pe">
-        <button type="button" onClick={handleFeedback} className="reino-casa-lateral__item" title="Feedback">
+        <button type="button" onClick={handleFeedback} className="reino-casa-lateral__item">
           <GlifoPena ativo={false} className="reino-casa-lateral__glifo" />
-          <span className="reino-casa-lateral__rotulo">Feedback</span>
+          <span className="reino-casa-lateral__rotulo">Recado</span>
+          <span className="reino-casa-lateral__comodo">para nós</span>
         </button>
-        <button type="button" onClick={handleBackToHome} className="reino-casa-lateral__item" title="Sair">
+        <button type="button" onClick={handleBackToHome} className="reino-casa-lateral__item">
           <GlifoPorta ativo={false} className="reino-casa-lateral__glifo" />
-          <span className="reino-casa-lateral__rotulo">Sair</span>
+          <span className="reino-casa-lateral__rotulo">Sair da casa</span>
+          <span className="reino-casa-lateral__comodo">volta para Hoje</span>
         </button>
       </div>
     </aside>

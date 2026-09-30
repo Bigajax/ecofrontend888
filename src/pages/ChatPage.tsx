@@ -4,7 +4,7 @@ import { abrirPorta } from '@/utils/porta';
 /* -------------------------------------------------------------------------- */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, lazy, Suspense, type CSSProperties } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
@@ -19,7 +19,6 @@ import Sidebar from '../components/Sidebar';
 
 // 🚀 PERFORMANCE: Lazy load heavy components (Quick Win #4)
 const EcoLoopHud = lazy(() => import('../components/EcoLoopHud'));
-const QuickSuggestions = lazy(() => import('../components/QuickSuggestions').then(m => ({ default: m.default })));
 const TrialOnboarding = lazy(() => import('../components/trial/TrialOnboarding'));
 
 // Import types separately (não afeta bundle)
@@ -41,7 +40,6 @@ import { useIsPremium } from '../hooks/usePremiumContent';
 import { ensureSessionId } from '../utils/chat/session';
 import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
 import { isEcoMessage, resolveMessageSender } from '../utils/chat/messages';
-import { ROTATING_ITEMS, OPENING_VARIATIONS } from '../constants/chat';
 import mixpanel from '../lib/mixpanel';
 
 // 🚀 PERFORMANCE: Lazy load FeedbackPrompt
@@ -53,6 +51,7 @@ import { useMessageFeedbackContext } from '../hooks/useMessageFeedbackContext';
 import { useAdminCommands } from '../hooks/useAdminCommands';
 import { sendPassiveSignal } from '../api/passiveSignals';
 import formatName from '../utils/formatName';
+import VarandaDaCasa from '../components/reino/VarandaDaCasa';
 import { EVENTO_MEMORIA_GUARDADA } from '../hooks/useEcoStream/streamEventHandlers';
 
 const NETWORK_ERROR_MESSAGE =
@@ -74,11 +73,6 @@ const devLog = (label: string, payload?: Record<string, unknown>) => {
     /* noop */
   }
 };
-
-const pickHeroSubtitle = () =>
-  OPENING_VARIATIONS[
-    Math.floor(Math.random() * Math.max(OPENING_VARIATIONS.length, 1))
-  ] ?? '';
 
 const calculateFollowup = (lastSentAt: number | null, now: number): number => {
   if (!lastSentAt) return 0;
@@ -301,7 +295,6 @@ function ChatPage() {
   }, [guestGate.reachedLimit, guestGate.inputDisabled, guestGate.shouldShowSoftPrompt, isGuest, isVipUser, loginGateOpen]);
 
   const saudacao = useMemo(() => saudacaoDoDiaFromHour(new Date().getHours()), []);
-  const [heroSubtitle, setHeroSubtitle] = useState<string>(() => pickHeroSubtitle());
 
   const chatRef = useRef<HTMLElement | null>(null);
   const { scrollerRef, endRef, isAtBottom, isFarFromBottom, scrollToBottom } =
@@ -761,11 +754,6 @@ function ChatPage() {
   }, [scrollToBottom]);
   const showNewMessagesChip = hasPendingMessages && isFarFromBottom;
   const isEmptyState = messages.length === 0 && !erroApi;
-  const heroSubtitleResetRef = useRef(isEmptyState);
-  useEffect(() => {
-    if (isEmptyState && !heroSubtitleResetRef.current) setHeroSubtitle(pickHeroSubtitle());
-    heroSubtitleResetRef.current = isEmptyState;
-  }, [isEmptyState, setHeroSubtitle]);
   const hasComposerText = composerValue.trim().length > 0;
 
   // herói limpo (sem sugestões em cima)
@@ -974,43 +962,16 @@ function ChatPage() {
             <div className="w-full px-4 sm:px-6 lg:px-8">
               <div className="mx-auto flex w-full max-w-3xl flex-col">
                 {isEmptyState && (
-                  <motion.div
-                    className="w-full pt-16 pb-8"
-                    initial={false}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <div className="flex flex-col items-center text-center gap-5">
-                      {/* Olho ECO */}
-                      <motion.div
-                        initial={false}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                      >
-                        <img
-                          src="/images/reino/casa-800.webp"
-                          alt=""
-                          decoding="async"
-                          className="reino-chat-casa reino-rasgo-a"
-                        />
-                      </motion.div>
-
-                      {/* Saudação */}
-                      <motion.div
-                        className="space-y-2"
-                        initial={false}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, delay: 0.18 }}
-                      >
-                        <h1 className="font-display text-[28px] sm:text-[34px] font-bold leading-tight" style={{ color: '#1C2350' }}>
-                          {saudacao}{displayName && rawUserName !== 'Usuário' ? `, ${displayName}` : ''}
-                        </h1>
-                        <p className="eco-subtitle text-[15px] max-w-xs mx-auto leading-relaxed" style={{ color: 'var(--text-muted)' }} data-testid="chat-hero-subtitle">
-                          {heroSubtitle || OPENING_VARIATIONS[0] || ''}
-                        </p>
-                      </motion.div>
-                    </div>
-                  </motion.div>
+                  <VarandaDaCasa
+                    saudacao={saudacao}
+                    nome={displayName && rawUserName !== 'Usuário' ? displayName : null}
+                    isGuest={isGuest}
+                    disabled={composerPending}
+                    onPorta={(texto, id) => {
+                      mixpanel.track('Chat · Porta de entrada', { porta: id });
+                      void sendWithGuards(texto);
+                    }}
+                  />
                 )}
 
                 {/* Trial Onboarding Checklist */}
@@ -1093,19 +1054,6 @@ function ChatPage() {
           <div id="eco-chat-audio-slot" className="mx-auto w-full max-w-3xl" />
 
           <div className="mx-auto w-full max-w-3xl space-y-2">
-            <Suspense fallback={null}>
-              <QuickSuggestions
-                variant="footer"
-                visible={showQuick && !composerPending && !erroApi && !voicePanelOpen}
-                onPickSuggestion={handlePickSuggestion}
-                rotatingItems={ROTATING_ITEMS}
-                rotationMs={5000}
-                showRotating={true}
-                disabled={composerPending}
-                className="-mb-1"
-              />
-            </Suspense>
-
             <SuggestionChips
               visible={shouldShowSuggestionChips}
               onPick={(suggestion, index) =>

@@ -6,7 +6,7 @@ import React, {
   forwardRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUp, Mic, Loader2 } from "lucide-react";
+import { Mic } from "lucide-react";
 import clsx from "clsx";
 
 import { toast } from "../utils/toast";
@@ -33,7 +33,7 @@ export type ChatInputHandle = {
   focus: () => void;
 };
 
-const CTA_TEXT = "Converse com a Eco...";
+const CTA_TEXT = "Escreva para a Eco...";
 
 const ChatInput = forwardRef<ChatInputHandle, Props>(
   (
@@ -201,6 +201,10 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
             isBusy ? "opacity-90" : "",
           )}
         >
+          {/* como o endereço de uma carta */}
+          <span className="reino-folha-escrever__para" aria-hidden="true">
+            para a Eco
+          </span>
           <textarea
             ref={textareaRef}
             value={inputMessage}
@@ -264,7 +268,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                   aria-label="Enviar mensagem"
                   title={isBusy ? "Aguarde a resposta da Eco" : "Enviar mensagem"}
                 >
-                  <ArrowUp size={18} strokeWidth={2} />
+                  enviar
                 </motion.button>
               ) : action === "sending" ? (
                 <motion.div
@@ -273,12 +277,12 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.16 }}
-                  className="reino-folha-escrever__botao"
+                  className="reino-folha-escrever__botao is-escrevendo"
                   role="status"
                   aria-label="Eco está respondendo"
                   title="Eco está respondendo"
                 >
-                  <Loader2 size={18} strokeWidth={2} className="animate-spin" />
+                  a Eco escreve
                 </motion.div>
               ) : (
                 <motion.button
